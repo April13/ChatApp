@@ -82,7 +82,7 @@ public class Server {
         switch(user){
             case "UserA":
                 hash= Integer.toString(f)+keyTable[0][1];
-                System.out.println(hash);
+                // System.out.println(hash);
                 hash= Hash.IDCheck(hash);
                 sHash[0]=hash;
                 //System.out.println("end of case UserA");
@@ -205,7 +205,7 @@ public class Server {
                     break;
             }
             ClientThread t = new ClientThread(uSocket, userID);
-            System.out.println(t.userID);
+            
             users.add(t);   // save it in the ArrayList
             
             t.start();
@@ -241,8 +241,8 @@ public class Server {
         {
             case "UserA":
                 //
-                System.out.println("HASH: "+sHash[0]);
-                System.out.println("TOKEN: "+tokens[1]);
+                // System.out.println("HASH: "+sHash[0]);
+                // System.out.println("TOKEN: "+tokens[1]);
                 if(sHash[0].equals(tokens[1])){
                     int f = makeRand();
                     AUTH_SUCCESS(f, ports[0], Sock);
