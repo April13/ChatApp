@@ -28,7 +28,7 @@ import java.util.ArrayList;
 public class Server {
     
     private static int port;
-    private static int ports = 9512;
+    private static int ports = 7689;
     private static String user;
     private static String hashm;
     private static String hashs;
@@ -39,7 +39,7 @@ public class Server {
     
     //
     // TCP
-    private static int tcpPort = 9512;
+    private static int tcpPort = 7689;
     private ServerSocket connectSocket;
     private ArrayList<ClientThread> users; // an ArrayList to keep the list of the ClientHost
     private static int uniqueId;    // a unique ID for each connection
@@ -67,7 +67,7 @@ public class Server {
     
     public void start() throws SocketException, IOException {
         
-        DatagramSocket dr = new DatagramSocket(9875);
+        DatagramSocket dr = new DatagramSocket(8756);
         reciveU(dr);
         int f = makeRand();
         String hash;

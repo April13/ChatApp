@@ -36,7 +36,7 @@ class ClientUDPConnection {
     private byte[] receiveBuffer = new byte[1024];
     
     //Server socket destination port number.
-    private int serverPort = 9875;
+    private int serverPort = 8756;
     protected int TCPServerPort;
     
     

@@ -82,7 +82,7 @@ class Client {
                 //TCPServerPort = clientUDP.TCPServerPort;
                 //
                 //changed to
-                TCPServerPort = 9512;
+                TCPServerPort = 7689;
                 
                 //Establish a new TCP connection, and encrypt messages from this point on.
                 clientTCP = new ClientTCPConnection(clientID, randCookie, TCPServerPort);
