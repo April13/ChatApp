@@ -19,6 +19,7 @@ class Client {
 	private String clientKey;			//The secret key used in authenticating the client.
 	
 	protected boolean authSucc = false;
+	private String randNumber;				//The random number from server.
 	protected String randCookie; 		//Sent from server, used to establish a TCP connection to the server.
 	protected int TCPServerPort; 		//Sent from server in auth_success message.
 	
@@ -80,13 +81,15 @@ class Client {
 			if(authSucc=clientUDP.authSucc == true) 
 			{
 				
+				randNumber = clientUDP.randNumber; 
+				
 				randCookie = clientUDP.randCookie;
 				TCPServerPort = clientUDP.TCPServerPort;
 				
 				
 								
 				//Establish a new TCP connection, and encrypt messages from this point on.
-				clientTCP = new ClientTCPConnection(clientID, randCookie, TCPServerPort);
+				clientTCP = new ClientTCPConnection(clientID, randNumber, randCookie, TCPServerPort);
 				
 				
 				//Begin chat initialization when a "CONNECTED" message is received. (Will be decrypted.)

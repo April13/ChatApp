@@ -18,6 +18,7 @@ class ClientTCPConnection {
 	private String clientID; //Passed by Client.
 	private String randCookie;
 	private int TCPServerPort;
+	private String randNumber;
 	
 	//Used to establish a TCP connection to the server.
 	private Socket clientTCPSocket;
@@ -30,8 +31,9 @@ class ClientTCPConnection {
 	 * Constructor for ClientTCPConnection.
 	 * Parameters are provided by the Client instance.
 	 */
-	protected ClientTCPConnection(String clientID, String randCookie, int TCPServerPort) {
+	protected ClientTCPConnection(String clientID, String randNumber, String randCookie, int TCPServerPort) {
 		this.clientID = clientID;
+		this.randNumber = randNumber;
 		this.randCookie = randCookie;
 		this.TCPServerPort = TCPServerPort;
 	}
@@ -63,6 +65,8 @@ class ClientTCPConnection {
 		
 		
 		//****Encrypt message.****
+		crypt.encrypt(randCookie, randNumber);
+		
 		
 		
 		//Send randCookie to server.
@@ -74,12 +78,11 @@ class ClientTCPConnection {
 		
 		//Receive message from server.
 		bufferedReader = new BufferedReader(new InputStreamReader(clientTCPSocket.getInputStream()));
-		fromServer = bufferedReader.readLine();
+		fromServer = (bufferedReader.readLine()).trim();
 		
 		
 		//****Decrypt message.****
-		
-		//fromServer = [decrypted message];
+		crypt.decrypt(fromServer, randNumber);
 		
 		
 		

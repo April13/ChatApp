@@ -22,7 +22,7 @@ class ClientUDPConnection {
 	private String clientKey;	//Secret key.
 	
 	//Values provided by the server.
-	protected int randNumber; 	//Sent by server in Challenge, used in calculating Client's response.
+	protected String randNumber; 	//Sent by server in Challenge, used in calculating Client's response.
 	protected String authfail = "authentication failed";
 	protected String randCookie;	//Sent by server along with authSucc and TCPServerPort. 
 									//Used by Client later in TCP connection request.
@@ -91,7 +91,7 @@ class ClientUDPConnection {
 		    String serverMsg = new String (receivePacket.getData()).trim();
 		   
 		    //Parse server message and fetch value of randCookie.
-		    randNumber = Integer.parseInt(serverMsg);
+		    randNumber = serverMsg;
 		    
 		    //Testing.
 		    System.out.println("Server response: " + serverMsg); //Print server message.
