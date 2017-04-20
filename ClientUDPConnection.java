@@ -169,7 +169,7 @@ class ClientUDPConnection {
             
             //If the server's response isn't an AUTH_FAIL message,
             //the AUTH_SUCC message should have sent randCookie and TCPServerPort.
-            
+            System.out.println("servermsg: "+serverMsg);
             if(!serverMsg.equalsIgnoreCase(authfail))
             {
                 

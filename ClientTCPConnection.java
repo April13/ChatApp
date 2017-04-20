@@ -69,34 +69,39 @@ class ClientTCPConnection {
         
         //****Encrypt message.****
         
-        
+        //Receive message from server.
+        BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientTCPSocket.getInputStream()));
         //Send randCookie to server.
         printWriter = new PrintWriter(clientTCPSocket.getOutputStream());
-        printWriter.println(randCookie);
-        printWriter.flush();
-        System.out.println("TCP - randCookie: " + randCookie);
+        // printWriter.println(randCookie);
+        // printWriter.flush();
+        // System.out.println("TCP - randCookie: " + randCookie);
         
         //
         // send connect req message to server w/ clientID
         printWriter.println("CONNECT_REQUEST,"+clientID);
         printWriter.flush();
         
+  
         
-        //Receive message from server.
-        bufferedReader = new BufferedReader(new InputStreamReader(clientTCPSocket.getInputStream()));
-        fromServer = bufferedReader.readLine();
+
+        String fromS = inFromServer.readLine();
         
-        
-        //****Decrypt message.****
-        //fromServer = [decrypted message];
+        System.out.println("fromServer: " + fromS);
         
         //Receive CONNECTED message from server.
-        if(fromServer.equalsIgnoreCase("CONNECTED"))
+        if(fromS.equalsIgnoreCase("CONNECTED"))
         {
             
             System.out.println("Your are now connected to the server and can initiate a chat session.");
             connected();
         }
+        else
+        {
+            System.out.println("NOT CONNECT");
+            
+        }
+        
         
         
     } //End of connect().
@@ -120,14 +125,11 @@ class ClientTCPConnection {
         catch (IOException eIO) {
             System.out.println("Exception creating new Input/output Streams: " + eIO);
         }
+        
         sendMessage(5,"");
         
         while(true)
         {
-            
-            //Prepare buffer for reading input from command line.
-            BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
-            
             
             //Receive message from server.
             try
@@ -162,6 +164,9 @@ class ClientTCPConnection {
             }
             catch(ClassNotFoundException e2) {
             }
+            
+            //Prepare buffer for reading input from command line.
+            BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
             
             
             System.out.print("Please enter a command: ");
@@ -199,6 +204,8 @@ class ClientTCPConnection {
                     sendMessage(4,"");
                 }
             }catch(IOException e){}
+            
+
             
         }
         
@@ -284,8 +291,6 @@ class ClientTCPConnection {
     {
         ChatMessage newM = new ChatMessage(type, msg);
         try {
-            ObjectOutputStream sOutput;
-            sOutput = new ObjectOutputStream(clientTCPSocket.getOutputStream());
             sOutput.writeObject(newM);
         }
         catch(IOException e) {

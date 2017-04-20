@@ -152,7 +152,8 @@ public class Server {
         if (uMsg[0].equalsIgnoreCase("CONNECT_REQUEST"))
         {
             String tcpMsg = "CONNECTED";
-            
+            //
+            System.out.println("sent: "+tcpMsg);
             PrintWriter printWriter = new PrintWriter(cSocket.getOutputStream());
             printWriter.println(tcpMsg);
             printWriter.flush();
@@ -161,11 +162,12 @@ public class Server {
             ClientThread t = new ClientThread(cSocket, userID);
             users.add(t);   // save it in the ArrayList
             t.start();
+            System.out.println("size: "+users.size());
         }
         
         
         
-    }
+    }// END of Start
     
     public static void reciveU(DatagramSocket Sock) throws IOException {
         byte[] hold = new byte[1024];
@@ -486,10 +488,12 @@ public class Server {
                         break;
                     case 4: // see online users
                         String names = "";
-                        for(int i = 0; i < users.size(); ++i)
+                        
+                        for(int i = 0; i <= users.size(); ++i)
                         {
                             ClientThread ct = users.get(i);
                             names += "\t" + ct.userID + "\n";
+                            System.out.println(ct.userID);
                         }
                         
                         String msg ="List of the users connected at " + sdf.format(new Date()) + "\n" + names;
