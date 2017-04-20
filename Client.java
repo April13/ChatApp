@@ -79,10 +79,8 @@ class Client {
             {
                 
                 randCookie = clientUDP.randCookie;
-                //TCPServerPort = clientUDP.TCPServerPort;
-                //
-                //changed to
-                TCPServerPort = 7689;
+                
+                TCPServerPort = clientUDP.TCPServerPort;
                 
                 //Establish a new TCP connection, and encrypt messages from this point on.
                 clientTCP = new ClientTCPConnection(clientID, randCookie, TCPServerPort);
@@ -90,6 +88,7 @@ class Client {
                 
                 //Begin chat initialization when a "CONNECTED" message is received. (Will be decrypted.)
                 clientTCP.connect();
+
                 
                 //****Chat session has ended.****
                 

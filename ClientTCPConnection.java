@@ -29,6 +29,7 @@ class ClientTCPConnection {
     //
     ObjectInputStream sInput;
     ObjectOutputStream sOutput;
+    private static int tcpPort = 7689;
     
     
     /**
@@ -63,7 +64,7 @@ class ClientTCPConnection {
         serverIPAddress = InetAddress.getByName("localhost");
         
         //Create a new TCP client socket.
-        clientTCPSocket = new Socket(serverIPAddress, TCPServerPort);
+        clientTCPSocket = new Socket(serverIPAddress, tcpPort);
         
         
         
@@ -93,7 +94,7 @@ class ClientTCPConnection {
         if(fromS.equalsIgnoreCase("CONNECTED"))
         {
             
-            System.out.println("Your are now connected to the server and can initiate a chat session.");
+            //System.out.println("Your are now connected to the server and can initiate a chat session.");
             connected();
         }
         else
@@ -116,9 +117,11 @@ class ClientTCPConnection {
         
         //Client is now connected to the chat server, and can try to initialize a chat.
         //Is "Activity Timer" the same thing as a regular timeout?
+        System.out.println("Trying to connect to server...");
         
         try
         {
+            clientTCPSocket = new Socket(serverIPAddress, TCPServerPort);
             sOutput = new ObjectOutputStream(clientTCPSocket.getOutputStream());
             sInput  = new ObjectInputStream(clientTCPSocket.getInputStream());
         }
@@ -127,6 +130,8 @@ class ClientTCPConnection {
         }
         
         sendMessage(5,"");
+        
+        
         
         while(true)
         {

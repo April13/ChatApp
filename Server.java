@@ -28,7 +28,7 @@ import java.util.ArrayList;
 public class Server {
     
     private static int port;
-    private static int ports = 7689;
+    private static int ports[] = {5000, 5001, 5002, 5003, 5004, 5005, 5007, 5008, 5009};
     private static String user;
     private static String hashm;
     private static String hashs;
@@ -45,11 +45,17 @@ public class Server {
     private static int uniqueId;    // a unique ID for each connection
     private SimpleDateFormat sdf;
     private static int sessionID;
+    private DatagramSocket dr;
     
     public static void main(String[] args) throws IOException
     {
         Server server = new Server();
-        server.start();
+        
+        while(true)
+        {
+            server.start();
+        }
+        
     }
     
     public Server() {
@@ -60,6 +66,8 @@ public class Server {
             connectSocket = new ServerSocket(tcpPort);
             users = new ArrayList<ClientThread>();
             sdf = new SimpleDateFormat("HH:mm:ss");
+            
+            dr = new DatagramSocket(8756);
         }
         catch(IOException e){System.out.println("Server Start Error: "+e);}
     }
@@ -67,7 +75,6 @@ public class Server {
     
     public void start() throws SocketException, IOException {
         
-        DatagramSocket dr = new DatagramSocket(8756);
         reciveU(dr);
         int f = makeRand();
         String hash;
@@ -153,16 +160,56 @@ public class Server {
         {
             String tcpMsg = "CONNECTED";
             //
-            System.out.println("sent: "+tcpMsg);
+            
             PrintWriter printWriter = new PrintWriter(cSocket.getOutputStream());
             printWriter.println(tcpMsg);
             printWriter.flush();
             
             String userID = uMsg[1];
-            ClientThread t = new ClientThread(cSocket, userID);
+            
+            Socket uSocket;
+            switch(userID)
+            {
+                case "UserA":
+                    uSocket = new ServerSocket(ports[0]).accept();
+                    break;
+                case "UserB":
+                    uSocket = new ServerSocket(ports[1]).accept();
+                    break;
+                case "UserC":
+                    uSocket = new ServerSocket(ports[2]).accept();
+                    break;
+                case "UserD":
+                    uSocket = new ServerSocket(ports[3]).accept();
+                    break;
+                case "UserE":
+                    uSocket = new ServerSocket(ports[4]).accept();
+                    break;
+                case "UserF":
+                    uSocket = new ServerSocket(ports[5]).accept();
+                    break;
+                case "UserG":
+                    uSocket = new ServerSocket(ports[6]).accept();
+                    break;
+                case "UserH":
+                    uSocket = new ServerSocket(ports[7]).accept();
+                    break;
+                case "UserI":
+                    uSocket = new ServerSocket(ports[8]).accept();
+                    break;
+                case "UserJ":
+                    uSocket = new ServerSocket(ports[9]).accept();
+                    break;
+                default:
+                    uSocket = new ServerSocket(6000).accept();
+                    break;
+            }
+            ClientThread t = new ClientThread(uSocket, userID);
+            System.out.println(t.userID);
             users.add(t);   // save it in the ArrayList
+            
             t.start();
-            System.out.println("size: "+users.size());
+            
         }
         
         
@@ -198,7 +245,7 @@ public class Server {
                 System.out.println("TOKEN: "+tokens[1]);
                 if(sHash[0].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f, ports, Sock);
+                    AUTH_SUCCESS(f, ports[0], Sock);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -208,7 +255,7 @@ public class Server {
             case "UserB":
                 if(sHash[1].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports,Sock);
+                    AUTH_SUCCESS(f,ports[1],Sock);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -218,7 +265,7 @@ public class Server {
             case "UserC":
                 if(sHash[2].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports,Sock);
+                    AUTH_SUCCESS(f,ports[2],Sock);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -228,7 +275,7 @@ public class Server {
             case "UserD":
                 if(sHash[3].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports,Sock);
+                    AUTH_SUCCESS(f,ports[3],Sock);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -238,7 +285,7 @@ public class Server {
             case "UserE":
                 if(sHash[4].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports,Sock);
+                    AUTH_SUCCESS(f,ports[4],Sock);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -248,7 +295,7 @@ public class Server {
             case "UserF":
                 if(sHash[5].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports,Sock);
+                    AUTH_SUCCESS(f,ports[5],Sock);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -258,7 +305,7 @@ public class Server {
             case "UserG":
                 if(sHash[6].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports,Sock);
+                    AUTH_SUCCESS(f,ports[6],Sock);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -267,7 +314,7 @@ public class Server {
             case "UserH":
                 if(sHash[7].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports,Sock);
+                    AUTH_SUCCESS(f,ports[7],Sock);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -277,7 +324,7 @@ public class Server {
             case "UserI":
                 if(sHash[8].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports,Sock);
+                    AUTH_SUCCESS(f,ports[8],Sock);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -287,7 +334,7 @@ public class Server {
             case "UserJ":
                 if(sHash[9].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports,Sock);
+                    AUTH_SUCCESS(f,ports[9],Sock);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -446,8 +493,6 @@ public class Server {
             }
             
             date = new Date().toString() + "\n";
-            
-            run();
         }
         
         // what will run forever
@@ -489,11 +534,10 @@ public class Server {
                     case 4: // see online users
                         String names = "";
                         
-                        for(int i = 0; i <= users.size(); ++i)
+                        for(int i = 0; i < users.size(); ++i)
                         {
                             ClientThread ct = users.get(i);
                             names += "\t" + ct.userID + "\n";
-                            System.out.println(ct.userID);
                         }
                         
                         String msg ="List of the users connected at " + sdf.format(new Date()) + "\n" + names;
