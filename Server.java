@@ -378,6 +378,86 @@ public class Server {
     //
     //  TCP
     
+    private void display(String msg)
+    {
+        String time = sdf.format(new Date()) + " " + msg;
+        System.out.println(time);
+    }
+    
+    // for a client who logoff using the LOGOUT message
+    synchronized void remove(int id)
+    {
+        // scan the array list until we found the Id
+        for(int i = 0; i < users.size(); ++i)
+        {
+            ClientThread ct = users.get(i);
+            if(ct.id == id)
+            {
+                users.remove(i);
+                return;
+            }
+        }
+    }
+    
+    //
+    //
+    public void CHAT_REQUEST(String userA, String userB)
+    {
+        for(int i = 0; i < users.size(); ++i)
+        {
+            ClientThread ct = users.get(i);
+            if(ct.userID == userB && ct.inChatSession == false)
+            {
+                int session = ++sessionID;
+                // CHAT_STARTED message sent
+                ct.sendMsg(0, "CHAT_STARTED");
+                ct.inChatSession = true;
+                
+                ClientThread ct2 = users.get(getUserIndexUsingID(userA));
+                ct2.sendMsg(0, "CHAT_STARTED");
+                ct2.inChatSession = true;
+                
+                ct.sendChatMsg(session, userA, "Now Chatting with "+ ct2.userID);
+                
+                ct2.sendChatMsg(session, userA, "Now Chatting with "+ ct.userID);
+                
+                return;
+            }
+            else
+            {
+                // UNREACHABLE message sent
+                ct.sendMsg(0, "UNREACHABLE");
+            }
+        }
+    }
+    
+    public int getUserIndexUsingID(String userID)
+    {
+        for(int i = 0; i < users.size(); ++i)
+        {
+            ClientThread ct = users.get(i);
+            if(ct.userID == userID)
+            {
+                return i;
+            }
+        }
+        
+        return 9999;
+    }
+    
+    public void END_REQUEST(String userA, String userB)
+    {
+        //END NOTIFY
+        
+    }
+    
+    public void CHAT(int session, String userB, String msg)
+    {
+        ClientThread ct = users.get(getUserIndexUsingID(userB));
+        ct.sendChatMsg(session, userB, msg);
+        
+    }
+    
     class ClientThread extends Thread
     {
         // the socket where to listen/talk
@@ -537,86 +617,6 @@ public class Server {
                 display("Exception writing to server: " + e);
             }
         }
-    } // END of ClientThread
-    
-    private void display(String msg)
-    {
-        String time = sdf.format(new Date()) + " " + msg;
-        System.out.println(time);
-    }
-    
-    // for a client who logoff using the LOGOUT message
-    synchronized void remove(int id)
-    {
-        // scan the array list until we found the Id
-        for(int i = 0; i < users.size(); ++i)
-        {
-            ClientThread ct = users.get(i);
-            if(ct.id == id)
-            {
-                users.remove(i);
-                return;
-            }
-        }
-    }
-    
-    //
-    //
-    public void CHAT_REQUEST(String userA, String userB)
-    {
-        for(int i = 0; i < users.size(); ++i)
-        {
-            ClientThread ct = users.get(i);
-            if(ct.userID == userB && ct.inChatSession == false)
-            {
-                int session = ++sessionID;
-                // CHAT_STARTED message sent
-                ct.sendMsg(0, "CHAT_STARTED");
-                ct.inChatSession = true;
-                
-                ClientThread ct2 = users.get(getUserIndexUsingID(userA));
-                ct2.sendMsg(0, "CHAT_STARTED");
-                ct2.inChatSession = true;
-                
-                ct.sendChatMsg(session, userA, "Now Chatting with "+ ct2.userID);
-                
-                ct2.sendChatMsg(session, userA, "Now Chatting with "+ ct.userID);
-                
-                return;
-            }
-            else
-            {
-                // UNREACHABLE message sent
-                ct.sendMsg(0, "UNREACHABLE");
-            }
-        }
-    }
-    
-    public int getUserIndexUsingID(String userID)
-    {
-        for(int i = 0; i < users.size(); ++i)
-        {
-            ClientThread ct = users.get(i);
-            if(ct.userID == userID)
-            {
-                return i;
-            }
-        }
-        
-        return 9999;
-    }
-    
-    public void END_REQUEST(String userA, String userB)
-    {
-        //END NOTIFY
-        
-    }
-    
-    public void CHAT(int session, String userB, String msg)
-    {
-        ClientThread ct = users.get(getUserIndexUsingID(userB));
-        ct.sendChatMsg(session, userB, msg);
-        
     }
     
 } // END of Server
