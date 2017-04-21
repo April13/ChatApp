@@ -202,7 +202,7 @@ class ClientTCPConnection {
                     
                     Chat c = new Chat(userB);
                     
-                    
+                    c.run();
                 }
                 else if(userInput.equalsIgnoreCase("show online"))
                 {
@@ -219,21 +219,12 @@ class ClientTCPConnection {
     class Chat extends Thread
     {
         ChatMessage cm;
-        ObjectInputStream sInput;
-        ObjectOutputStream sOutput;
         
         String userB;
         
         public Chat(String userB)
         {
             this.userB = userB;
-            
-            try
-            {
-                sOutput = new ObjectOutputStream(clientTCPSocket.getOutputStream());
-                sInput  = new ObjectInputStream(clientTCPSocket.getInputStream());
-            }
-            catch(IOException e){}
         }
         
         public void run()
