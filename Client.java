@@ -4,158 +4,147 @@ import java.io.InputStreamReader;
 
 
 /**
- * The Client class is used to log onto the client host, 
- * create a UDP connection to contact the server, and 
- * create the more reliable TCP connection once access 
- * has been granted by the server.
+ * The Client class is used to initiate the creation of a Client and
+ * prompts the end user for a clientID in order to log on,
+ * create a UDP connection to contact the server, and
+ * create the more reliable TCP connection once access
+ * has been granted by the server. 
+ * 
+ * The end user must know their password (the Client's secret key)
+ * as well in order to be able to authenticate themselves later
+ * when the server sends a challenge to the Client.
  *
  */
 class Client {
+    
+    private ClientUDPConnection clientUDP; 	//UDP
+    private ClientTCPConnection clientTCP; 	//TCP
+    int UDPServerPort = 8756;
+    
+    private String clientID; 			//The clientID is used to determine the identity of the users.
+    private String clientKey;			//The secret key used in authenticating the client.
+    
+    protected boolean authSucc = false;
+    protected String randCookie; 		//Sent from server, used to establish a TCP connection to the server.
+    protected int TCPServerPort; 		//Sent from server in auth_success message.
+    
+    
+    
+    /**
+     * Constructor
+     */
+    public Client(String clientID) {
+        this.clientID = clientID; 						//Set ClientID
+        this.clientKey = KeyTable.getKey(clientID); 	//Set ClientKey
+    }
+    
+    /**
+     * Constructor
+     */
+    public Client() {
+        // default constructor
+    }
+    
+    
+    /**
+     * The end user is required to have a valid clientID to begin.
+     */
+    public static void main(String args[]) throws Exception {
+        
+        
+        String userInput = null;
+        
+        
+        //Buffer for reading input from command line.
+        BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
+        
+        
+        while(true) {
 
-	private ClientUDPConnection clientUDP; 	//UDP
-	private ClientTCPConnection clientTCP; 	//TCP
-	
-	private String clientID; 			//The clientID is used to determine the identity of the users.	
-	private String clientKey;			//The secret key used in authenticating the client.
-	
-	protected boolean authSucc = false;
-	private String randNumber;				//The random number from server.
-	protected String randCookie; 		//Sent from server, used to establish a TCP connection to the server.
-	protected int TCPServerPort; 		//Sent from server in auth_success message.
-	
+        	System.out.println();
+            System.out.print("Please enter a valid ClientID to log on: ");
+            
+            //Read user input from command line.
+            userInput = consoleInput.readLine();
+            
+            
+            //Break out of while loop if it's a valid clientID.
+            if(KeyTable.testClientID(userInput) == true) {
+                break;
+            }
+            
+        }
+        
+        
+        Client client1 = new Client(userInput); //ClientID confirmed, creates a new Client object.
+        client1.runClient();
+        
+    }//End of main.
+    
+    
+    /**
+     * Runs the client application.
+     */
+    public void runClient() throws Exception
+    {
+        
+        try
+        {
+          
+            //Create a new UDP connection.
+            clientUDP = new ClientUDPConnection(clientID, clientKey, UDPServerPort);
+            
+            //Send UDP connection request to server.
+            //Wait on server to send a challenge; timeout possible.
+            clientUDP.hello(); 		
+            
+            //****Server sends a challenge in response.****
 
-	
-	/**
-	 * Constructor
-	 */
-	public Client(String clientID) {
-		this.clientID = clientID; 					//Set ClientID
-		this.clientKey = KeyTable.getKey(clientID); //Set ClientKey
-		
-	}
-	
-	/**
-	 * Constructor
-	 */
-	public Client() {
-		// default constructor
-	}
-	
-	
-	
-	/**
-	 * Runs the client application.
-	 */
-	public void runClient() throws Exception 
-	{	
-		
-		try
-		{
-			
-			
-			this.logon(); 	//Prompt user to log on.
-			
-			
-			//Create a new UDP connection.
-			clientUDP = new ClientUDPConnection(clientID, clientKey);
-			
-			//Send UDP connection request to server. 
-			//Wait on server to send a challenge; timeout possible.
-			clientUDP.hello(); 		//****Server sends a challenge in response.****	
-			
-	//=============
-						
-			//Client sends response() to authenticate itself.
-			//Wait on server to return authSucc or authFail; timeout possible.
-			clientUDP.response();
-			
-			
-			
-			//****Server sends an AUTH_FAIL or AUTH_SUCC.****	
-			
-			
-			//****UDP socket has already been closed.****	
-			
-			
-			
-			if(authSucc=clientUDP.authSucc == true) 
-			{
-				
-				randNumber = clientUDP.randNumber; 
-				
-				randCookie = clientUDP.randCookie;
-				TCPServerPort = clientUDP.TCPServerPort;
-				
-				
-								
-				//Establish a new TCP connection, and encrypt messages from this point on.
-				clientTCP = new ClientTCPConnection(clientID, randNumber, randCookie, TCPServerPort);
-				
-				
-				//Begin chat initialization when a "CONNECTED" message is received. (Will be decrypted.)
-				clientTCP.connect();
-				
-				
-				
-				
-				//****Chat session has ended.****
-				
-				//****TCP connection has already been closed.**** 
-				
-			}
-			
-			
-			
-			//****An authFail message was received, or client has finished chat session.****
-			
-			
-		
-			
-		}
-		finally 
-		{
-			
-			//*****Close TCP connection.******
-			
-			//Handled by garbage collection, no action required on the Client object's part.
-			
-		}
-	    
-	}
-	
+            
+            //Client sends response() to authenticate itself.
+            //Wait on server to return authSucc or authFail; timeout possible.
+            clientUDP.response();
+                        
+            
+            //****Server sends an AUTH_FAIL or AUTH_SUCC.****
+            
+            if(authSucc=clientUDP.authSucc == true)
+            {
+                
+                randCookie = clientUDP.randCookie;
+                
+                TCPServerPort = clientUDP.TCPServerPort;
+                
+                //Establish a new TCP connection, and encrypt messages from this point on.
+                clientTCP = new ClientTCPConnection(clientID, randCookie, TCPServerPort);
+                
+                
+                //Begin chat initialization when a "CONNECTED" message is received. (Will be decrypted.)
+                clientTCP.connect();	
 
-	
-	
-	/**
-	 * The user must log on before the client can attempt to connect 
-	 * to the server.
-	 * 
-	 */
-	private void logon() throws IOException {
-		
-		String logon = "log on";	//Keyword entered to log onto the client application.
-		String userInput;
-		
-		
-		//Buffer for reading input from command line.
-		BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
-		
-		
-		//Wait for user to log on.
-		while(true) 
-		{
-			System.out.print("To log onto the client, enter Log on : ");
-			
-			//Read user input from command line.
-			userInput = consoleInput.readLine();
-			
-			//Logs onto the application if the user has correctly entered 'log on'.
-			if(userInput.equalsIgnoreCase(logon)) {
-				break;
-			}
-		}
-		
-	}//End of logon.
-	
+                
+                //****Chat session has ended.****
+                
+                //****The server's TCP socket to this particular client should have already been closed.****
+                
+            }
+            
+            
+            
+            //****An authFail message was received, or client has finished chat session.****
+            
+           
+        }
+        finally
+        {
+            
+            //*****Close welcoming TCP connection.******
+            
+            //Handled by garbage collection, no action required on the Client object's part.
+            
+        }
+        
+    }//End of runClient().
 
-}
+    
+}//End of Client.java
