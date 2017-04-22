@@ -27,7 +27,7 @@ class Client {
     protected boolean authSucc = false;
     protected String randCookie; 		//Sent from server, used to establish a TCP connection to the server.
     protected int TCPServerPort; 		//Sent from server in auth_success message.
-    
+   
     
     
     /**
