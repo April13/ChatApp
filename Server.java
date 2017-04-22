@@ -36,6 +36,7 @@ public class Server {
     {"UserC","123C"},{"UserD","123D"},{"UserE","123E"},{"UserF","123F"},
     {"UserG","123G"},{"UserH","123H"},{"UserI","123I"},{"UserJ","123J"}};
     private static String[] sHash = new String[10];
+    private static int[] randArr = new int[10];
     
     private static int tcpPort = 7689;	// TCP universal welcoming port
     
@@ -117,6 +118,7 @@ public class Server {
                 // System.out.println(hash);
                 hash= Hash.IDCheck(hash);
                 sHash[0]=hash;
+		randArr[0]=f;
                 //System.out.println("end of case UserA");
                 break;
                 
@@ -124,54 +126,63 @@ public class Server {
                 hash= Integer.toString(f)+keyTable[1][1];
                 hash=Hash.IDCheck(hash);
                 sHash[1]=hash;
+		randArr[1]=f;	
                 break;
                 
             case "UserC":
                 hash= Integer.toString(f)+keyTable[2][1];
                 hash=Hash.IDCheck(hash);
                 sHash[2]=hash;
+		randArr[2]=f;
                 break;
                 
             case "UserD":
                 hash= Integer.toString(f)+keyTable[3][1];
                 hash=Hash.IDCheck(hash);
                 sHash[3]=hash;
+		randArr[3]=f;	
                 break;
                 
             case "UserE":
                 hash= Integer.toString(f)+keyTable[4][1];
                 hash=Hash.IDCheck(hash);
                 sHash[4]=hash;
+		randArr[4]=f;
                 break;
                 
             case "UserF":
                 hash= Integer.toString(f)+keyTable[5][1];
                 hash=Hash.IDCheck(hash);
                 sHash[5]=hash;
+		randArr[5]=f;
                 break;
                 
             case "UserG":
                 hash= Integer.toString(f)+keyTable[6][1];
                 hash=Hash.IDCheck(hash);
                 sHash[6]=hash;
+		randArr[6]=f;	
                 break;
                 
             case "UserH":
                 hash= Integer.toString(f)+keyTable[7][1];
                 hash=Hash.IDCheck(hash);
                 sHash[7]=hash;
+		randArr[7]=f;	
                 break;
                 
             case "UserI":
                 hash= Integer.toString(f)+keyTable[8][1];
                 hash=Hash.IDCheck(hash);
                 sHash[8]=hash;
+		randArr[8]=f;	
                 break;
                 
             case "UserJ":
                 hash= Integer.toString(f)+keyTable[9][1];
                 hash=Hash.IDCheck(hash);
                 sHash[9]=hash;
+		randArr[9]=f;
                 break;
 	               
         }
