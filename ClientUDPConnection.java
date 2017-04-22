@@ -163,7 +163,7 @@ class ClientUDPConnection {
             
             //Retrieve the client's message from the receive packet.
             String serverMsg = new String (receivePacket.getData()).trim();
-            encrpytionKey= randNumber+clientKey;
+            encryptionKey= randNumber+clientKey;
             serverMsg = crypt.decrypt(serverMsg,encryptionKey);
                        
             
