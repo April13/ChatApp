@@ -36,7 +36,7 @@ public class Server {
     {"UserC","123C"},{"UserD","123D"},{"UserE","123E"},{"UserF","123F"},
     {"UserG","123G"},{"UserH","123H"},{"UserI","123I"},{"UserJ","123J"}};
     private static String[] sHash = new String[10];
-    private static int[] randArr = new int[10];
+    private static String[] randArr = new String[10];
     
     private static int tcpPort = 7689;	// TCP universal welcoming port
     
@@ -115,74 +115,72 @@ public class Server {
         switch(user){
             case "UserA":
                 hash= Integer.toString(f)+keyTable[0][1];
-                // System.out.println(hash);
+                randArr[0]=hash;
                 hash= Hash.IDCheck(hash);
                 sHash[0]=hash;
-		randArr[0]=f;
-                //System.out.println("end of case UserA");
                 break;
                 
             case "UserB":
                 hash= Integer.toString(f)+keyTable[1][1];
-                hash=Hash.IDCheck(hash);
-                sHash[1]=hash;
-		randArr[1]=f;	
+                randArr[1]=hash;
+		hash=Hash.IDCheck(hash);
+                sHash[1]=hash;	
                 break;
                 
             case "UserC":
                 hash= Integer.toString(f)+keyTable[2][1];
-                hash=Hash.IDCheck(hash);
+                randArr[2]=hash;
+		hash=Hash.IDCheck(hash);
                 sHash[2]=hash;
-		randArr[2]=f;
                 break;
                 
             case "UserD":
                 hash= Integer.toString(f)+keyTable[3][1];
-                hash=Hash.IDCheck(hash);
-                sHash[3]=hash;
-		randArr[3]=f;	
+                randArr[3]=hash;
+		hash=Hash.IDCheck(hash);
+                sHash[3]=hash;	
                 break;
                 
             case "UserE":
                 hash= Integer.toString(f)+keyTable[4][1];
-                hash=Hash.IDCheck(hash);
+                randArr[4]=hash;
+		hash=Hash.IDCheck(hash);
                 sHash[4]=hash;
-		randArr[4]=f;
                 break;
                 
             case "UserF":
                 hash= Integer.toString(f)+keyTable[5][1];
-                hash=Hash.IDCheck(hash);
+                randArr[5]=hash;
+		hash=Hash.IDCheck(hash);
                 sHash[5]=hash;
-		randArr[5]=f;
                 break;
                 
             case "UserG":
                 hash= Integer.toString(f)+keyTable[6][1];
-                hash=Hash.IDCheck(hash);
-                sHash[6]=hash;
-		randArr[6]=f;	
+                randArr[6]=hash;
+		hash=Hash.IDCheck(hash);
+                sHash[6]=hash;	
                 break;
                 
             case "UserH":
                 hash= Integer.toString(f)+keyTable[7][1];
-                hash=Hash.IDCheck(hash);
-                sHash[7]=hash;
-		randArr[7]=f;	
+                randArr[7]=hash;
+		hash=Hash.IDCheck(hash);
+                sHash[7]=hash;	
                 break;
                 
             case "UserI":
                 hash= Integer.toString(f)+keyTable[8][1];
-                hash=Hash.IDCheck(hash);
-                sHash[8]=hash;
-		randArr[8]=f;	
+                randArr[8]=hash;
+		hash=Hash.IDCheck(hash);
+                sHash[8]=hash;	
                 break;
                 
             case "UserJ":
                 hash= Integer.toString(f)+keyTable[9][1];
-                hash=Hash.IDCheck(hash);
+                randArr[9]=hash;
+		hash=Hash.IDCheck(hash);
                 sHash[9]=hash;
-		randArr[9]=f;
                 break;
 	               
         }
@@ -327,7 +325,7 @@ public class Server {
                 System.out.println("TOKEN: "+tokens[1]);
                 if(sHash[0].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f, ports[0], Sock);
+                    AUTH_SUCCESS(f, ports[0], Sock,randArr[0]);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -337,7 +335,7 @@ public class Server {
             case "UserB":
                 if(sHash[1].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports[1],Sock);
+                    AUTH_SUCCESS(f,ports[1],Sock,randArr[1]);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -347,7 +345,7 @@ public class Server {
             case "UserC":
                 if(sHash[2].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports[2],Sock);
+                    AUTH_SUCCESS(f,ports[2],Sock,randArr[2]);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -357,7 +355,7 @@ public class Server {
             case "UserD":
                 if(sHash[3].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports[3],Sock);
+                    AUTH_SUCCESS(f,ports[3],Sock,randArr[3]);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -367,7 +365,7 @@ public class Server {
             case "UserE":
                 if(sHash[4].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports[4],Sock);
+                    AUTH_SUCCESS(f,ports[4],Sock,randArr[4});
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -377,7 +375,7 @@ public class Server {
             case "UserF":
                 if(sHash[5].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports[5],Sock);
+                    AUTH_SUCCESS(f,ports[5],Sock,randArr[5]);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -387,7 +385,7 @@ public class Server {
             case "UserG":
                 if(sHash[6].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports[6],Sock);
+                    AUTH_SUCCESS(f,ports[6],Sock,ranArr[6]);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -396,7 +394,7 @@ public class Server {
             case "UserH":
                 if(sHash[7].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports[7],Sock);
+                    AUTH_SUCCESS(f,ports[7],Sock,ranArr[7]);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -406,7 +404,7 @@ public class Server {
             case "UserI":
                 if(sHash[8].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports[8],Sock);
+                    AUTH_SUCCESS(f,ports[8],Sock,ranArr[8]);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -416,7 +414,7 @@ public class Server {
             case "UserJ":
                 if(sHash[9].equals(tokens[1])){
                     int f = makeRand();
-                    AUTH_SUCCESS(f,ports[9],Sock);
+                    AUTH_SUCCESS(f,ports[9],Sock,ranArr[9]);
                 }else
                 {
                     AUTH_FAIL(Sock);
@@ -443,12 +441,12 @@ public class Server {
         Sock.send(ss);
     }
     
-    public static void AUTH_SUCCESS(int rand_cookie, int port_number, DatagramSocket Sock) throws UnknownHostException, IOException
+    public static void AUTH_SUCCESS(int rand_cookie, int port_number, DatagramSocket Sock,String cryKey) throws UnknownHostException, IOException
     {
     	//Set isAuthSucc to true so that startTCP() will be called.
     	isAuthSucc = true;
-    	
-        byte[] sb = (rand_cookie + "," + port_number).getBytes();
+	String sec= rand_cookie + "," + port_number;
+        byte[] sb = (crypt.encrypt(sec,cryKey)).getBytes();
         InetAddress net = InetAddress.getLocalHost();
         DatagramPacket ss = new DatagramPacket(sb, sb.length, net, port);
         Sock.send(ss);
