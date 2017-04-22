@@ -27,7 +27,7 @@ class ClientUDPConnection {
     protected String authfail = "authentication failed";
     protected String randCookie;	//Sent by server along with authSucc and TCPServerPort.
     //Used by Client later in TCP connection request.
-    private int encryptionKey;		//Client uses randCookie to generate the encryption key.
+    private String encryptionKey;		//Client uses randCookie to generate the encryption key.
     protected boolean authSucc = false;
     
     //Used to establish a UDP connection to the server.
@@ -163,8 +163,8 @@ class ClientUDPConnection {
             
             //Retrieve the client's message from the receive packet.
             String serverMsg = new String (receivePacket.getData()).trim();
-            
-            
+            encrpytionKey= randNumber+clientKey;
+            serverMsg = crypt.decrypt(serverMsg,encryptionKey);
                        
             
             //If the server's response isn't an AUTH_FAIL message,
