@@ -1,5 +1,5 @@
 
-//ClientTCPConnection class: clientUDPsocket//
+//ClientTCPConnection class: clientTCPsocket//
 
 
 
@@ -49,11 +49,11 @@ ChatListener {
 	while() {
 
 		//after server says you're now chatting with UserX, set isChatting for connected() :
-		clientUDPsocket.isChatting = true;
+		clientTCPsocket.isChatting = true;
 
 
 		//after either User has decided to end the chat, set isChatting for connected() :
-		clientUDPsocket.isChatting = false;
+		clientTCPsocket.isChatting = false;
 
 	}
 }
