@@ -13,7 +13,7 @@ public class ChatMessage implements Serializable {
     // ONLINEUSERS to receive a list of all the connected users
     // MESSAGE an ordinary message
     // LOGOUT to disconnect from the Server
-    static final int CHAT_REQUEST = 0, MESSAGE = 1, LOGOUT = 2, END_REQUEST = 3, SHOW_ONLINE = 4, CONNECTED = 5, HISTORY = 6, END_CHAT = 7;
+    static final int CHAT_REQUEST = 0, MESSAGE = 1, LOGOUT = 2, END_REQUEST = 3, SHOW_ONLINE = 4, CONNECTED = 5, HISTORY_REQ = 6, END_CHAT = 7;
     private int type;
     private String message;
     

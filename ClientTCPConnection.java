@@ -159,6 +159,10 @@ class ClientTCPConnection {
             if(uInput.equalsIgnoreCase(logoff))
             {
                 sendMessage(2, "");
+                if(inChat)
+                {
+                    sendMessage(3, recipientUser);
+                }
                 
                 logOut = true;
                 break;
@@ -185,13 +189,22 @@ class ClientTCPConnection {
             }
             else if(uInput.equalsIgnoreCase("end chat"))
             {
-                sendMessage(3, recipientUser);
+                if(inChat)
+                    sendMessage(3, recipientUser);
+                else
+                    System.out.println("No chat to end");
+            }
+            else if(uInput.startsWith("history ") || uInput.startsWith("History "))
+            {
+                String temp[] = uInput.split(" ");
+                String userB = temp[1];
+                sendMessage(6, userB);
             }
             else
             {
-                if (recipientUser != null && inChat)
+                if (inChat)
                     sendChatMessage(recipientUser, uInput, chatSession);
-                if (!inChat)
+                else if (!inChat)
                     System.out.println("Invalid Command");
             }
         }
@@ -235,7 +248,6 @@ class ClientTCPConnection {
                         case 0: // chat request
                             if (msg.equalsIgnoreCase("CHAT_STARTED"))
                             {
-                                inChat = true;
                                 System.out.println(msg);
                                 System.out.print("> ");
                             }
@@ -256,7 +268,6 @@ class ClientTCPConnection {
                             System.out.print("> ");
                             break;
                         case 2: // log off
-                            //clientTCPSocket.close();
                             break;
                         case 4: // show online users
                             System.out.println(msg);
@@ -275,10 +286,14 @@ class ClientTCPConnection {
                             System.out.print("> ");
                             break;
                         case 7: // end chat notification
-                            System.out.println(chatMsg);
+                            System.out.println(msg);
                             System.out.print("> ");
                             recipientUser = null;
                             inChat = false;
+                            break;
+                        case 8: // chat history message
+                            System.out.println(chatMsg);
+                            System.out.print("> ");
                             break;
                         default:
                             break;
@@ -309,10 +324,10 @@ class ClientTCPConnection {
     {
         ChatMessage newM = new ChatMessage(1, msg);
         newM.setSessionID(session);
-        newM.setUserB(toUser);
+        newM.setUserB(recipientUser);
         try {
             sOutput.writeObject(newM);
-            System.out.println ("Message sent");
+            //System.out.println ("Message sent");
         }
         catch(IOException e) {
             System.out.println("Exception writing to server: " + e);

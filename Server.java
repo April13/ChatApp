@@ -458,6 +458,7 @@ public class Server {
         String date;
         
         String chatPartner;
+        int currentChatSession;
         
         ChatMessage cm;
         
@@ -505,7 +506,10 @@ public class Server {
                     cm = (ChatMessage) sInput.readObject();
                 }
                 catch (IOException e) {
-                    display(userID + " Exception reading Streams: " + e);
+                    display(userID + " is disconnected");
+                    if (inChatSession)
+                        END_REQUEST(userID, chatPartner);
+                    keepGoing=false;
                     break;
                 }
                 catch(ClassNotFoundException e2) {break;}
@@ -520,61 +524,33 @@ public class Server {
                 switch(type)
                 {
                     case 0: // chat req
-                        //CHAT_REQUEST(userID, message);
-                        String userB = message;
-                        System.out.println("CHAT_REQUEST from " + userID + " to " + userB);
-                        boolean startedChat = false;
-                        
-                        for(int i = 0; i < users.size(); ++i)
-                        {
-                            ClientThread ct = users.get(i);
-                            if(userB.equalsIgnoreCase(ct.userID) && ct.inChatSession == false)
-                            {
-                                int session = ++sessionID;
-                                
-                                ct.sendMsg(0, "CHAT_STARTED");
-                                ct.chatPartner = userID;
-                                ct.inChatSession = true;
-                                ct.sendChatMsg(session, userID, "Now Chatting with "+ userID);
-                                
-                                sendMsg(0, "CHAT_STARTED");
-                                chatPartner = userB;
-                                inChatSession = true;
-                                sendChatMsg(session, userB, "Now Chatting with "+ userB);
-                                // store chat session info
-                                //ChatHistory record = new ChatHistory(session, userA, userB);
-                                //chatLogs.add(record);
-                                // send chat start notification w/ info of chatting partner
-                                
-                                startedChat = true;
-                            }
-                        }
-                        // UNREACHABLE message sent if userB was not reached
-                        if(!startedChat)
-                        {
-                            sendMsg(0, "UNREACHABLE");
-                        }
-                        
+                        CHAT_REQUEST(userID, message);
                         break;
-                    case 1: // chat message to a user
-                        //CHAT(sessionNum, chatPartner, message, userID);
+                    case 1: // send chat message to a user
                         System.out.println("CHAT_MESSAGE received from "+ userID + " to " + user2);
                         
                         ClientThread sendtoClient = users.get(getUserIndexUsingID(user2));
                         String formatedMsg = sdf.format(new Date()) + "\t" + userID+ ": " + message;
                         sendtoClient.sendChatMsg(sessionNum, userID, formatedMsg);
+                        
                         break;
                     case 2: // log out
                         display(userID + " disconnected with a LOGOUT message.");
-                        try
-                        {
-                            socket.close();
-                        }
-                        catch (IOException e){}
                         keepGoing = false;
                         break;
-                    case 3: // end req
-                        END_REQUEST(userID, message);
+                    case 3: // end req received
+                        //END NOTIFY
+                        System.out.println("END_REQUEST from " + userID + " to " + message);
+                        ClientThread endUser = users.get(getUserIndexUsingID(message));
+                        
+                        // send chat end notification w/ info of chatting partner
+                        endUser.sendMsg(7, "Chat with "+ userID + " ended.");
+                        sendMsg(7, "Chat with "+ message + " ended.");
+                        
+                        endUser.inChatSession = false;
+                        inChatSession = false;
+                        endUser.chatPartner = null;
+                        chatPartner = null;
                         break;
                     case 4: // see online users
                         String names = "";
@@ -587,8 +563,11 @@ public class Server {
                         String msg ="List of the users connected at " + sdf.format(new Date()) + "\n" + names;
                         sendMsg(4, msg);
                         break;
-                    case 5:
+                    case 5: // Connected to server message
                         sendMsg(5, "You are now connected to the Server.");
+                        break;
+                    case 6: // history request
+                        sendMsg(8, HISTORY(userID, message));
                         break;
                     default:
                         break;
@@ -696,6 +675,7 @@ public class Server {
                 ct.sendMsg(0, "CHAT_STARTED");
                 ct.chatPartner = userA;
                 ct.inChatSession = true;
+                ct.currentChatSession = session;
                 ct.sendChatMsg(session, userA, "Now Chatting with "+ userA);
                 
                 
@@ -704,6 +684,7 @@ public class Server {
                 ct2.sendMsg(0, "CHAT_STARTED");
                 ct.chatPartner = userB;
                 ct2.inChatSession = true;
+                ct2.currentChatSession = session;
                 ct2.sendChatMsg(session, userB, "Now Chatting with "+ userB);
                 // store chat session info
                 //ChatHistory record = new ChatHistory(session, userA, userB);
@@ -725,10 +706,10 @@ public class Server {
     
     public int getUserIndexUsingID(String userID)
     {
-        for(int i = 0; i < users.size(); ++i)
+        for(int i = 0; i < users.size(); i++)
         {
             ClientThread ct = users.get(i);
-            if(userID.equalsIgnoreCase(userID))
+            if(userID.equalsIgnoreCase(ct.userID))
             {
                 return i;
             }
@@ -737,33 +718,11 @@ public class Server {
         return 9999;
     }
     
-    public void END_REQUEST(String userA, String userB)
-    {
-        //END NOTIFY
-        ClientThread ct1 = users.get(getUserIndexUsingID(userA));
-        ClientThread ct2 = users.get(getUserIndexUsingID(userB));
-        
-        ct1.inChatSession = false;
-        ct2.inChatSession = false;
-        ct1.chatPartner = null;
-        ct2.chatPartner = null;
-        
-        // send chat end notification w/ info of chatting partner
-        ct1.sendMsg(7, "Chat with "+ ct2.userID + " ended.");
-        ct2.sendMsg(7, "Chat with "+ ct1.userID + " ended.");
-    }
     
-    // send chat message to intended receipent and save for chat history
-    public void CHAT(int session, String toUser, String msg, String fromUser)
+    public String HISTORY(String requestingUser, String partner)
     {
-        System.out.println("CHAT_MESSAGE received from "+ fromUser + " to " + toUser);
-        
-        ClientThread sendtoClient = users.get(getUserIndexUsingID(toUser));
-        String formatedMsg = sdf.format(new Date()) + "\t" + fromUser+ ": " + msg;
-        sendtoClient.sendChatMsg(session, fromUser, formatedMsg);
+        return ("No History");
     }
-
-    
     
 } // END of Server
 
