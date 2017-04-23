@@ -28,7 +28,7 @@ connected() {
 		catch {
 		
 			if(isChatting) {
-				//don't break, loop back so you can get back in try block and reset timer (user re-types command)
+				//don't break, loop back so you can get back in try block and reset timer (user re-types their previous command if necessary)
 			} else 
 			{
 				//tell ChatListener to quit, so it wont hang
