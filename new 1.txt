@@ -3,8 +3,8 @@
 
 
 
-isChatting = false;
-
+boolean isChatting = false;
+boolean isTimeout = false;
 
 connected() {
 
@@ -32,6 +32,7 @@ connected() {
 			} else 
 			{
 				//tell ChatListener to quit, so it wont hang
+				isTimeout = true;
 			}
 		}
 		
@@ -43,17 +44,18 @@ connected() {
 
 
 
-ChatListener {
+class ChatListener {
 
-
-	while() {
-
+	while(isTimeout == false) {
+		
 		//after server says you're now chatting with UserX, set isChatting for connected() :
-		clientTCPsocket.isChatting = true;
+		isChatting = true;
 
 
 		//after either User has decided to end the chat, set isChatting for connected() :
-		clientTCPsocket.isChatting = false;
+		isChatting = false;
 
 	}
+	
+	//quit
 }
