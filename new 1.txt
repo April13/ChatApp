@@ -1,0 +1,59 @@
+
+//ClientTCPConnection class: clientUDPsocket//
+
+
+
+isChatting = false;
+
+
+connected() {
+
+	//prompt to enter command
+
+	while(true) {
+	
+		try{
+			//set timer
+
+			while(true) {
+			
+				switch() { 	
+					//if timeout happens while parsing command, just loop and have user re-type the command
+				}
+			
+			}//end while2
+		
+		
+		} 
+		catch {
+		
+			if(isChatting) {
+				//don't break, loop back so you can get back in try block and reset timer (user re-types command)
+			} else 
+			{
+				//tell ChatListener to quit, so it wont hang
+			}
+		}
+		
+	}//end while1	
+}
+
+
+
+
+
+
+ChatListener {
+
+
+	while() {
+
+		//after server says you're now chatting with UserX, set isChatting for connected() :
+		clientUDPsocket.isChatting = true;
+
+
+		//after either User has decided to end the chat, set isChatting for connected() :
+		clientUDPsocket.isChatting = false;
+
+	}
+}
