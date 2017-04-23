@@ -287,12 +287,12 @@ public class Server {
         port = r.getPort();
         String trim = str.trim();
         //
-        String delims = "[,]+";
-        String[] tokens = trim.split(",");
+        String delims = "[#]+";
+        String[] tokens = trim.split(delims);
         switch (tokens[0]) {
             case "UserA":
                 //
-                // System.out.println("HASH: "+sHash[0]);
+                System.out.println("HASH: "+sHash[0]);
                 System.out.println("TOKEN: " + tokens[1]);
                 if (sHash[0].equals(tokens[1])) {
                     int f = makeRand();
@@ -303,6 +303,8 @@ public class Server {
                 break;
                 
             case "UserB":
+            	System.out.println("HASH: "+sHash[1]);
+                System.out.println("TOKEN: " + tokens[1]);
                 if (sHash[1].equals(tokens[1])) {
                     int f = makeRand();
                     AUTH_SUCCESS(f, ports[1], Sock, randArr[1]);
@@ -312,6 +314,8 @@ public class Server {
                 break;
                 
             case "UserC":
+            	System.out.println("HASH: "+sHash[2]);
+                System.out.println("TOKEN: " + tokens[1]);
                 if (sHash[2].equals(tokens[1])) {
                     int f = makeRand();
                     AUTH_SUCCESS(f, ports[2], Sock, randArr[2]);
@@ -321,6 +325,8 @@ public class Server {
                 break;
                 
             case "UserD":
+            	System.out.println("HASH: "+sHash[3]);
+                System.out.println("TOKEN: " + tokens[1]);
                 if (sHash[3].equals(tokens[1])) {
                     int f = makeRand();
                     AUTH_SUCCESS(f, ports[3], Sock, randArr[3]);
@@ -507,8 +513,19 @@ public class Server {
                 }
                 catch (IOException e) {
                     display(userID + " is disconnected");
-                    if (inChatSession)
-                        END_REQUEST(userID, chatPartner);
+                    if (inChatSession){
+                    	ClientThread endUser = users.get(getUserIndexUsingID(chatPartner));
+                        
+                        // send chat end notification w/ info of chatting partner
+                        endUser.sendMsg(7, "Chat with "+ userID + " ended.");
+                        sendMsg(7, "Chat with "+ chatPartner + " ended.");
+                        
+                        endUser.inChatSession = false;
+                        inChatSession = false;
+                        endUser.chatPartner = null;
+                        chatPartner = null;
+                    }
+                        //END_REQUEST(userID, chatPartner);
                     keepGoing=false;
                     break;
                 }

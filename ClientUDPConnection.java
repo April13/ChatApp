@@ -85,7 +85,7 @@ class ClientUDPConnection {
 	            System.out.println("waiting for challenge");
 	            
 	            //Wait for Challenge from server containing randNumber. Server
-	            //message should be an 8-digit integer number, eg. 12345678.
+	            //message should be an 4-digit integer number, eg. 1234.
 			    		    
 	            
 	            //Create packet to extract message from the receive buffer.
@@ -133,8 +133,8 @@ class ClientUDPConnection {
             
             
             //String sendMsg = clientKey + Hash.IDCheck(randNumber + clientKey);
-            String sendMsg = clientID + "," + Hash.IDCheck(randNumber + clientKey);
-            
+            String sendMsg = clientID + "#" + Hash.IDCheck(randNumber + clientKey);
+            System.out.println("client sendMsg: " + sendMsg);
             
             
             //Pass response message to send buffer.
@@ -163,17 +163,23 @@ class ClientUDPConnection {
             
             //Retrieve the client's message from the receive packet.
             String serverMsg = new String (receivePacket.getData()).trim();
-            encryptionKey= randNumber+clientKey;
-            serverMsg = crypt.decrypt(serverMsg,encryptionKey);
-                       
             
-            //If the server's response isn't an AUTH_FAIL message,
-            //the AUTH_SUCC message should have sent randCookie and TCPServerPort.
-            System.out.println("AUTH_SUCC serverMsg: "+serverMsg);
+            System.out.println("AUTH_SUCC serverMsg before decryption: "+serverMsg);
+            
+           
             
             if(!serverMsg.equalsIgnoreCase(authfail))
             {
-                
+            	 encryptionKey= randNumber+clientKey;
+                 serverMsg = crypt.decrypt(serverMsg,encryptionKey);
+                            
+                 
+                 //If the server's response isn't an AUTH_FAIL message,
+                 //the AUTH_SUCC message should have sent randCookie and TCPServerPort.
+                 System.out.println("AUTH_SUCC serverMsg: "+serverMsg);
+                 
+                 
+                 
                 //Parse server message. 
                 StringTokenizer tokenizer = new StringTokenizer(serverMsg, ",");
                 
