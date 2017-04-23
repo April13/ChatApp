@@ -16,6 +16,11 @@ import java.io.ObjectOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Vector;
+import java.nio.file.*;
+import java.io.FileWriter;
+import java.io.FileReader;
+import java.io.File;
+
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -68,6 +73,7 @@ public class Server {
         } catch (IOException e) {
             System.out.println("Server Start Error: " + e);
         }
+        chatLogs = new Vector<ChatHistory>();
     }
     
     /**
@@ -287,12 +293,12 @@ public class Server {
         port = r.getPort();
         String trim = str.trim();
         //
-        String delims = "[#]+";
-        String[] tokens = trim.split(delims);
+        String delims = "[,]+";
+        String[] tokens = trim.split(",");
         switch (tokens[0]) {
             case "UserA":
                 //
-                System.out.println("HASH: "+sHash[0]);
+                // System.out.println("HASH: "+sHash[0]);
                 System.out.println("TOKEN: " + tokens[1]);
                 if (sHash[0].equals(tokens[1])) {
                     int f = makeRand();
@@ -303,8 +309,6 @@ public class Server {
                 break;
                 
             case "UserB":
-            	System.out.println("HASH: "+sHash[1]);
-                System.out.println("TOKEN: " + tokens[1]);
                 if (sHash[1].equals(tokens[1])) {
                     int f = makeRand();
                     AUTH_SUCCESS(f, ports[1], Sock, randArr[1]);
@@ -314,8 +318,6 @@ public class Server {
                 break;
                 
             case "UserC":
-            	System.out.println("HASH: "+sHash[2]);
-                System.out.println("TOKEN: " + tokens[1]);
                 if (sHash[2].equals(tokens[1])) {
                     int f = makeRand();
                     AUTH_SUCCESS(f, ports[2], Sock, randArr[2]);
@@ -325,8 +327,6 @@ public class Server {
                 break;
                 
             case "UserD":
-            	System.out.println("HASH: "+sHash[3]);
-                System.out.println("TOKEN: " + tokens[1]);
                 if (sHash[3].equals(tokens[1])) {
                     int f = makeRand();
                     AUTH_SUCCESS(f, ports[3], Sock, randArr[3]);
@@ -406,7 +406,7 @@ public class Server {
     
     public static int makeRand(){
         Random rnd = new Random();
-        int n = 1000 + rnd.nextInt(9000);
+        int n = 10000000 + rnd.nextInt(90000000);
         return n;
     }
     
@@ -513,8 +513,9 @@ public class Server {
                 }
                 catch (IOException e) {
                     display(userID + " is disconnected");
-                    if (inChatSession){
-                    	ClientThread endUser = users.get(getUserIndexUsingID(chatPartner));
+                    if (inChatSession)
+                    {
+                        ClientThread endUser = users.get(getUserIndexUsingID(chatPartner));
                         
                         // send chat end notification w/ info of chatting partner
                         endUser.sendMsg(7, "Chat with "+ userID + " ended.");
@@ -525,7 +526,6 @@ public class Server {
                         endUser.chatPartner = null;
                         chatPartner = null;
                     }
-                        //END_REQUEST(userID, chatPartner);
                     keepGoing=false;
                     break;
                 }
@@ -543,13 +543,13 @@ public class Server {
                     case 0: // chat req
                         CHAT_REQUEST(userID, message);
                         break;
-                    case 1: // send chat message to a user
+                    case 1: // received chat message from a user & send it to  intended recipient user
                         System.out.println("CHAT_MESSAGE received from "+ userID + " to " + user2);
                         
                         ClientThread sendtoClient = users.get(getUserIndexUsingID(user2));
-                        String formatedMsg = sdf.format(new Date()) + "\t" + userID+ ": " + message;
+                        String formatedMsg = sdf.format(new Date()) + " " + userID+ ": " + message;
                         sendtoClient.sendChatMsg(sessionNum, userID, formatedMsg);
-                        
+                        RecordChat(currentChatSession, userID, user2, formatedMsg);
                         break;
                     case 2: // log out
                         display(userID + " disconnected with a LOGOUT message.");
@@ -584,7 +584,8 @@ public class Server {
                         sendMsg(5, "You are now connected to the Server.");
                         break;
                     case 6: // history request
-                        sendMsg(8, HISTORY(userID, message));
+                        String his = HISTORY(userID, message);
+                        sendMsg(8, his);
                         break;
                     default:
                         break;
@@ -738,7 +739,72 @@ public class Server {
     
     public String HISTORY(String requestingUser, String partner)
     {
-        return ("No History");
+        System.out.println("HISTORY_REQUEST from " + requestingUser + " with " + partner);
+        String newline = System.getProperty("line.separator");
+        boolean logFound = false;
+        int sID;
+        String CL = "";
+        for(int i=chatLogs.size(); i>0; i--)
+        {
+            ChatHistory ch = chatLogs.get(i-1);
+            if ((requestingUser.equalsIgnoreCase(ch.getUser1()) && partner.equalsIgnoreCase(ch.getUser2())) || (partner.equalsIgnoreCase(ch.getUser1()) && requestingUser.equalsIgnoreCase(ch.getUser2())))
+            {
+                sID = ch.getSessionID();
+                try
+                {
+                    String fileName = Integer.toString(sID) + ".txt";
+                    //File file = new File(fileName);
+                    FileReader read = new FileReader(fileName);
+                    BufferedReader br = new BufferedReader(read);
+                    String line;
+                    while ((line = br.readLine()) != null)
+                    {
+                        CL += line + "\r\n";
+                    }
+                }
+                catch (IOException e){return ("Chat Log file could not be read");}
+                logFound = true;
+                break;
+            }
+        }
+        
+        if (!logFound)
+            return ("No History");
+        
+        return CL;
+    }
+    
+    public void RecordChat(int s, String u1, String u2, String msg)
+    {
+        System.out.println("RECORDING chat message from " + u1 + " with " + u2);
+        String fileName = Integer.toString(s) + ".txt";
+        File f = new File(fileName);
+        if(f.exists() && !f.isDirectory())
+        {
+            try
+            {
+                FileWriter fw = new FileWriter(fileName, true);
+                fw.write(s + "- " + msg);
+                fw.write("\r\n");
+                fw.close();
+            }
+            catch (IOException e) {System.out.println("Chat not recorded");
+            }
+        }
+        else if (!f.exists())
+        {
+            chatLogs.add(new ChatHistory(s, u1, u2));
+            //File file = new File(s + ".txt");
+            try
+            {
+                FileWriter fw = new FileWriter(fileName, true);
+                fw.write(s + "- " + msg);
+                fw.write("\r\n");
+                fw.close();
+            }
+            catch (IOException e) {System.out.println("Chat not recorded");
+            }
+        }
     }
     
 } // END of Server

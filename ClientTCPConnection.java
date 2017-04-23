@@ -279,6 +279,7 @@ class ClientTCPConnection {
                             System.out.println("\n********************************************************");
                             System.out.println("COMMANDS:");
                             System.out.println("\tchat <USERID>: initiate chat with another user");
+                            System.out.println("\thistory <USERID>: initiate chat with another user");
                             System.out.println("\tlog off: log user off and ends program");
                             System.out.println("\tshow online: shows all online users");
                             System.out.println("\tend chat: ends current chat session");
@@ -292,15 +293,17 @@ class ClientTCPConnection {
                             inChat = false;
                             break;
                         case 8: // chat history message
-                            System.out.println(chatMsg);
+                            System.out.println(msg);
                             System.out.print("> ");
                             break;
                         default:
                             break;
                     }
                 }
-                catch (IOException e) {
-                    System.out.println(" Exception reading Streams: " + e);
+                catch (IOException e) // Server down
+                {
+                    System.out.println("Server is down. You were disconnected");
+                    disconnect();
                     break;
                 }
                 catch(ClassNotFoundException e2) {break;}
