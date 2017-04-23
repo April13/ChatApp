@@ -397,7 +397,7 @@ public class Server {
     
     public static int makeRand(){
         Random rnd = new Random();
-        int n = 10000000 + rnd.nextInt(90000000);
+        int n = 1000 + rnd.nextInt(9000);
         return n;
     }
     
