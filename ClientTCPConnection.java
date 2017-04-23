@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.net.*;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Scanner;
 
 
 /*
@@ -30,6 +31,7 @@ class ClientTCPConnection {
     ObjectInputStream sInput;
     ObjectOutputStream sOutput;
     private static int tcpPort = 7689;
+    private boolean inChat;
     
     
     /**
@@ -104,7 +106,8 @@ class ClientTCPConnection {
     } //End of connect().
     
     
-    
+    private String chatMsg, recipientUser;
+    private int chatSession;
     
     //
     //
@@ -113,6 +116,7 @@ class ClientTCPConnection {
         String userInput="";
         String fromServer = "";
         String logoff = "log off"; //For chat sessions.
+        inChat = false;
         
         //Client is now connected to the chat server, and can try to initialize a chat.
         //Is "Activity Timer" the same thing as a regular timeout?
@@ -128,168 +132,167 @@ class ClientTCPConnection {
             System.out.println("Exception creating new Input/output Streams: " + eIO);
         }
         
+        
+        new ChatListener().start();
+        
         sendMessage(5,"");
         
+        boolean logOut = false;
+        boolean invalidCommand = false;
         
-        
-        while(true)
+        Scanner scan = new Scanner(System.in);
+        System.out.println("Please enter a command: ");
+        //do
+        //{
+        while (true)
         {
+            System.out.print("> ");
+            // read message from user
+            String uInput = scan.nextLine();
             
-            //Receive message from server.
-            try
+            //try
+            //{
+            //Read user input from command line.
+            //userInput = consoleInput.readLine();
+            
+            //If end user enters "Log off" correctly, client closes TCP connection.
+            if(uInput.equalsIgnoreCase(logoff))
             {
-                ChatMessage cm;
-                cm = (ChatMessage) sInput.readObject();
+                sendMessage(2, "");
                 
-                int type = cm.getType();
-                String msg = cm.getMessage();
-                
-                switch (type)
-                {
-                    case 0: // chat request
-                        break;
-                    case 1: // chat msg
-                        break;
-                    case 2: // log off
-                        clientTCPSocket.close();
-                        break;
-                    case 4: // show online users
-                        System.out.println(msg);
-                        break;
-                    case 5: // connected
-                        System.out.println(msg);
-                        break;
-                    default:
-                        break;
-                }
-            }
-            catch (IOException e) {
-                System.out.println("Exception reading Streams: " + e);
-            }
-            catch(ClassNotFoundException e2) {
+                logOut = true;
+                break;
             }
             
-            //Prepare buffer for reading input from command line.
-            BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
-            
-            
-            System.out.print("Please enter a command: ");
-            
-            try
+            //If end user enters "Chat Client-ID-B", attempt chat initiation.
+            //If Client B is available, chatting begins.
+            //If Client B is unreachable, prompt end user for a command. (loop while)
+            // CHAT REQUEST
+            else if(uInput.startsWith("chat ") || uInput.startsWith("Chat "))
             {
-                //Read user input from command line.
-                userInput = consoleInput.readLine();
                 
+                String temp[] = uInput.split(" ");
+                String userB = temp[1];
                 
-                //If end user enters "Log off" correctly, client closes TCP connection.
-                if(userInput.equalsIgnoreCase(logoff))
-                {
-                    sendMessage(2, "");
-                    clientTCPSocket.close();
-                    break;
-                }
+                // Chat Request
+                sendMessage(0, userB);
                 
-                //If end user enters "Chat Client-ID-B", attempt chat initiation.
-                //If Client B is available, chatting begins.
-                //If Client B is unreachable, prompt end user for a command. (loop while)
-                // CHAT REQUEST
-                else if(userInput.startsWith("chat ") || userInput.startsWith("Chat "))
-                {
-                    
-                    String temp[] = userInput.split(" ");
-                    String userB = temp[1];
-                    
-                    Chat c = new Chat(userB);
-                    
-                    
-                }
-                else if(userInput.equalsIgnoreCase("show online"))
-                {
-                    sendMessage(4,"");
-                }
-            }catch(IOException e){}
-            
-
-            
+                //Chat(userB);
+            }
+            else if(uInput.equalsIgnoreCase("show online"))
+            {
+                sendMessage(4,"");
+            }
+            else if(uInput.equalsIgnoreCase("end chat"))
+            {
+                sendMessage(3, recipientUser);
+            }
+            else
+            {
+                if (recipientUser != null && inChat)
+                    sendChatMessage(recipientUser, uInput, chatSession);
+                if (!inChat)
+                    System.out.println("Invalid Command");
+            }
         }
+        //}catch(IOException e){}
+        //} while (invalidCommand);
+        
+        if (logOut)
+            disconnect();
         
     } // end of connected()
     
-    class Chat extends Thread
+   
+    class ChatListener extends Thread
     {
-        ChatMessage cm;
-        ObjectInputStream sInput;
-        ObjectOutputStream sOutput;
+        ChatMessage receivedChat;
+        boolean keepListening;
         
-        String userB;
-        
-        public Chat(String userB)
+        public ChatListener()
         {
-            this.userB = userB;
-            
-            try
-            {
-                sOutput = new ObjectOutputStream(clientTCPSocket.getOutputStream());
-                sInput  = new ObjectInputStream(clientTCPSocket.getInputStream());
-            }
-            catch(IOException e){}
+            keepListening = true;
         }
         
+        // to loop until LOGOUT
         public void run()
         {
+            //Receive message from server.
             
-            // cm = (ChatMessage) sInput.readObject();
-            
-            // Chat Request
-            sendMessage(0, userB);
-            
-            // to loop until LOGOUT
-            boolean keepGoing = true;
-            while(keepGoing)
+            while(keepListening)
             {
                 try
                 {
-                    cm = (ChatMessage) sInput.readObject();
+                    receivedChat = (ChatMessage) sInput.readObject();
+                    
+                    int type = receivedChat.getType();
+                    String msg = receivedChat.getMessage();
+                    int cSession = receivedChat.getSessionID();
+                    String user2 = receivedChat.getUserB();
+                    
+                    switch (type)
+                    {
+                        case 0: // chat request
+                            if (msg.equalsIgnoreCase("CHAT_STARTED"))
+                            {
+                                inChat = true;
+                                System.out.println(msg);
+                                System.out.print("> ");
+                            }
+                            else if(msg.equalsIgnoreCase("UNREACHABLE"))
+                            {
+                                System.out.println("User is unreachable");
+                                System.out.print("> ");
+                            }
+                            break;
+                        case 1: // chat msg
+                            if (!inChat)
+                            {
+                                recipientUser = user2;
+                                chatSession = cSession;
+                                inChat = true;
+                            }
+                            System.out.println(msg);
+                            System.out.print("> ");
+                            break;
+                        case 2: // log off
+                            //clientTCPSocket.close();
+                            break;
+                        case 4: // show online users
+                            System.out.println(msg);
+                            System.out.print("> ");
+                            break;
+                        case 5: // connected
+                            // prints connected message and commands
+                            System.out.println(msg);
+                            System.out.println("\n********************************************************");
+                            System.out.println("COMMANDS:");
+                            System.out.println("\tchat <USERID>: initiate chat with another user");
+                            System.out.println("\tlog off: log user off and ends program");
+                            System.out.println("\tshow online: shows all online users");
+                            System.out.println("\tend chat: ends current chat session");
+                            System.out.println("********************************************************");
+                            System.out.print("> ");
+                            break;
+                        case 7: // end chat notification
+                            System.out.println(chatMsg);
+                            System.out.print("> ");
+                            recipientUser = null;
+                            inChat = false;
+                            break;
+                        default:
+                            break;
+                    }
                 }
                 catch (IOException e) {
                     System.out.println(" Exception reading Streams: " + e);
                     break;
                 }
-                catch(ClassNotFoundException e2) {
-                    break;
-                }
-                // the messaage part of the ChatMessage
-                String message = cm.getMessage();
-                int type = cm.getType();
-                // chat req reply from server
-                if(type==0 && message == "CHAT_STARTED")
-                {
-                    
-                }
-                else if(type==0 && message == "UNREACHABLE")
-                {
-                    keepGoing=false;
-                }
+                catch(ClassNotFoundException e2) {break;}
             }
-            
-            close();
         }
-        
-        // try to close everything
-        private void close() {
-            // try to close the connection
-            try {
-                if(sOutput != null) sOutput.close();
-            }
-            catch(Exception e) {}
-            try {
-                if(sInput != null) sInput.close();
-            }
-            catch(Exception e) {};
-        }
-        
-    }// END of Chat
-    
+    }// END of ChatListener
+
 
     void sendMessage(int type, String msg)
     {
@@ -300,6 +303,39 @@ class ClientTCPConnection {
         catch(IOException e) {
             System.out.println("Exception writing to server: " + e);
         }
+    }
+    
+    void sendChatMessage(String toUser, String msg, int session)
+    {
+        ChatMessage newM = new ChatMessage(1, msg);
+        newM.setSessionID(session);
+        newM.setUserB(toUser);
+        try {
+            sOutput.writeObject(newM);
+            System.out.println ("Message sent");
+        }
+        catch(IOException e) {
+            System.out.println("Exception writing to server: " + e);
+        }
+    }
+    
+    /*
+     * Closes the input and output streams and disconnect
+     */
+    private void disconnect()
+    {
+        try {
+            if(sInput != null) sInput.close();
+        }
+        catch(Exception e) {}
+        try {
+            if(sOutput != null) sOutput.close();
+        }
+        catch(Exception e) {}
+        try{
+            if(clientTCPSocket != null) clientTCPSocket.close();
+        }
+        catch(Exception e) {}
     }
     
 }
