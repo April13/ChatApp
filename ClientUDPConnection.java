@@ -27,7 +27,7 @@ class ClientUDPConnection {
     protected String authfail = "authentication failed";
     protected String randCookie;	//Sent by server along with authSucc and TCPServerPort.
     //Used by Client later in TCP connection request.
-    private String encryptionKey;		//Client uses randCookie to generate the encryption key.
+    protected String encryptionKey;		//Client uses randCookie to generate the encryption key.
     protected boolean authSucc = false;
     
     //Used to establish a UDP connection to the server.
@@ -40,6 +40,7 @@ class ClientUDPConnection {
     private int UDPServerPort;
     protected int TCPServerPort;
     
+    protected boolean timedout;
     
     
     /**
@@ -50,6 +51,7 @@ class ClientUDPConnection {
         this.clientID = clientID;
         this.clientKey = clientKey;
         this.UDPServerPort = 8756;
+        timedout = false;
     }
     
     
@@ -64,50 +66,58 @@ class ClientUDPConnection {
     {
         try
         {
-        	
-	            //Create a new UDP client socket.
-	            clientUDPSocket = new DatagramSocket();
-	            
-	            //Pass client ID to send buffer.
-	            sendBuffer = (clientID).getBytes();
-	            
-	            //Retrieve destination server IP address.
-	            serverIPAddress = InetAddress.getByName("localhost");
-	            
+            
+            //Create a new UDP client socket.
+            clientUDPSocket = new DatagramSocket();
+            
+            //Pass client ID to send buffer.
+            sendBuffer = (clientID).getBytes();
+            
+            //Retrieve destination server IP address.
+            serverIPAddress = InetAddress.getByName("localhost");
+            
 	           
-	            
-	            //Send UDP packet to server to initiate connection.
-	            DatagramPacket sendPacket =
-	            new DatagramPacket(sendBuffer, sendBuffer.length, serverIPAddress, UDPServerPort);
-	            clientUDPSocket.send(sendPacket);
-	            
-	            
-	            System.out.println("waiting for challenge");
-	            
-	            //Wait for Challenge from server containing randNumber. Server
-	            //message should be an 8-digit integer number, eg. 12345678.
-			    		    
-	            
-	            //Create packet to extract message from the receive buffer.
-	            DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
-	            
-	            //Receive packet from client socket.
-	            clientUDPSocket.receive(receivePacket);
-	            
-	            //Retrieve the client's message from the receive packet.
-	            String serverMsg = new String (receivePacket.getData()).trim();
-	            
-	            System.out.println("Server response: " + serverMsg); //Print server message.
-	              
-	            //Parse server message and fetch value of randCookie.
-	            randNumber = Integer.parseInt(serverMsg);
+            
+            //Send UDP packet to server to initiate connection.
+            DatagramPacket sendPacket =
+            new DatagramPacket(sendBuffer, sendBuffer.length, serverIPAddress, UDPServerPort);
+            clientUDPSocket.send(sendPacket);
+            
+            
+            System.out.println("waiting for challenge");
+            
+            //Wait for Challenge from server containing randNumber. Server
+            //message should be an 4-digit integer number, eg. 1234.
+            
+            // Timeout to 1 minute
+            clientUDPSocket.setSoTimeout(6000);
+            
+            //Create packet to extract message from the receive buffer.
+            DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+            
+            
+            
+            //Receive packet from client socket.
+            clientUDPSocket.receive(receivePacket);
+            
+            //Retrieve the client's message from the receive packet.
+            String serverMsg = new String (receivePacket.getData()).trim();
+            
+            System.out.println("Server response: " + serverMsg); //Print server message.
+            
+            //Parse server message and fetch value of randCookie.
+            randNumber = Integer.parseInt(serverMsg);
 	           
-	            System.out.println("Client's randNumber: " + randNumber);
+            System.out.println("Client's randNumber: " + randNumber);
             
         }
-        finally
+        catch (SocketTimeoutException e)
         {
-            //Don't close client socket yet.
+            System.out.println("Timeout from trying to connect to Server. Goodbye.");
+            //close UDP socket
+            clientUDPSocket.close();
+            System.out.println("OFFLINE");
+            timedout = true;
         }
     }
     
@@ -133,8 +143,8 @@ class ClientUDPConnection {
             
             
             //String sendMsg = clientKey + Hash.IDCheck(randNumber + clientKey);
-            String sendMsg = clientID + "," + Hash.IDCheck(randNumber + clientKey);
-            
+            String sendMsg = clientID + "#" + Hash.IDCheck(randNumber + clientKey);
+            System.out.println("client sendMsg: " + sendMsg);
             
             
             //Pass response message to send buffer.
@@ -143,9 +153,11 @@ class ClientUDPConnection {
             //Retrieve destination server IP address.
             serverIPAddress = InetAddress.getByName("localhost");
             
+            // Timeout to 1 min
+            clientUDPSocket.setSoTimeout(6000);
+            
             //Send UDP packet to provide the client's response to the server's authentication challenge.
-            DatagramPacket sendPacket =
-            new DatagramPacket(sendBuffer, sendBuffer.length, serverIPAddress, UDPServerPort);
+            DatagramPacket sendPacket = new DatagramPacket(sendBuffer, sendBuffer.length, serverIPAddress, UDPServerPort);
             clientUDPSocket.send(sendPacket);
             
             
@@ -163,18 +175,24 @@ class ClientUDPConnection {
             
             //Retrieve the client's message from the receive packet.
             String serverMsg = new String (receivePacket.getData()).trim();
-            encryptionKey= randNumber+clientKey;
-            serverMsg = crypt.decrypt(serverMsg,encryptionKey);
-                       
             
-            //If the server's response isn't an AUTH_FAIL message,
-            //the AUTH_SUCC message should have sent randCookie and TCPServerPort.
-            System.out.println("AUTH_SUCC serverMsg: "+serverMsg);
+            System.out.println("AUTH_SUCC serverMsg before decryption: "+serverMsg);
+            
+            
             
             if(!serverMsg.equalsIgnoreCase(authfail))
             {
+                encryptionKey= randNumber+clientKey;
+                serverMsg = crypt.decrypt(serverMsg,encryptionKey);
                 
-                //Parse server message. 
+                
+                //If the server's response isn't an AUTH_FAIL message,
+                //the AUTH_SUCC message should have sent randCookie and TCPServerPort.
+                System.out.println("AUTH_SUCC serverMsg: "+serverMsg);
+                
+                
+                
+                //Parse server message.
                 StringTokenizer tokenizer = new StringTokenizer(serverMsg, ",");
                 
                 authSucc = true;
@@ -188,7 +206,7 @@ class ClientUDPConnection {
                 TCPServerPort = Integer.parseInt((tokenizer.nextToken()).trim());
                 
                 System.out.println("TCPServerPort: " + TCPServerPort); //Testing.
-            } 
+            }
             else
             {
                 //authFail
@@ -196,6 +214,13 @@ class ClientUDPConnection {
             }
             
             
+        }
+        catch(SocketTimeoutException o)
+        {
+            clientUDPSocket.close();
+            System.out.println("Timeout from trying to get authorization from server.");
+            System.out.println("OFFLINE");
+            timedout = true;
         }
         finally
         {

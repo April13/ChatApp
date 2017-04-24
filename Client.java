@@ -103,7 +103,8 @@ class Client {
             
             //Client sends response() to authenticate itself.
             //Wait on server to return authSucc or authFail; timeout possible.
-            clientUDP.response();
+            if(!clientUDP.timedout)
+                clientUDP.response();
                         
             
             //****Server sends an AUTH_FAIL or AUTH_SUCC.****
@@ -115,8 +116,10 @@ class Client {
                 
                 TCPServerPort = clientUDP.TCPServerPort;
                 
+                String encryptionKey = clientUDP.encryptionKey;
+                
                 //Establish a new TCP connection, and encrypt messages from this point on.
-                clientTCP = new ClientTCPConnection(clientID, randCookie, TCPServerPort);
+                clientTCP = new ClientTCPConnection(clientID, randCookie, TCPServerPort, encryptionKey);
                 
                 
                 //Begin chat initialization when a "CONNECTED" message is received. (Will be decrypted.)
@@ -128,7 +131,6 @@ class Client {
                 //****The server's TCP socket to this particular client should have already been closed.****
                 
             }
-            
             
             
             //****An authFail message was received, or client has finished chat session.****

@@ -15,6 +15,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Vector;
+import java.nio.file.*;
+import java.io.FileWriter;
+import java.io.FileReader;
+import java.io.File;
+import java.util.concurrent.TimeUnit;
+
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -26,9 +33,9 @@ import java.util.ArrayList;
  * @author Aditya
  */
 public class Server {
-
+    
     private static int port;
-    private static int ports[] = {5000, 5011, 5002, 5003, 5004, 5005, 5006, 5007, 5008, 5009};
+    private static int ports[] = {5000, 5011, 5002, 5033, 5004, 5005, 5006, 5007, 5008, 5009};
     private static String user;
     private static String hashm;
     private static String hashs;
@@ -37,23 +44,25 @@ public class Server {
     {"UserG", "123G"}, {"UserH", "123H"}, {"UserI", "123I"}, {"UserJ", "123J"}};
     private static String[] sHash = new String[10];
     private static String[] randArr = new String[10];
-
+    
     private static int tcpPort = 7689;	// TCP universal welcoming port
-
+    
     private static ServerSocket connectSocket; 	//Made connectSocket and users static
-    private static ArrayList<ClientThread> users; // an ArrayList to keep the list of the ClientHost
-
+    private static ArrayList<ClientThread> users; // an ArrayList to keep the list of the  connected Clients
+    
     private static int uniqueId;    // a unique ID for each connection
     private static SimpleDateFormat sdf;
     private static int sessionID;
     private static DatagramSocket dr;
-
+    
     static Server server;
-
-    //If this is false, then that means the client's TCP connection attempt has failed in startUDP(), 
+    // chat hisotry stores session id and users that chatted int session
+    private Vector<ChatHistory> chatLogs;
+    
+    //If this is false, then that means the client's TCP connection attempt has failed in startUDP(),
     //and a new ClientThread will not be created as a result.
     static boolean isAuthSucc = false;
-
+    
     /**
      * constructor
      */
@@ -65,35 +74,36 @@ public class Server {
         } catch (IOException e) {
             System.out.println("Server Start Error: " + e);
         }
+        chatLogs = new Vector<ChatHistory>();
     }
-
+    
     /**
      * Run the application.
      *
      */
     public static void main(String[] args) throws IOException {
-
+        
         server = new Server();
-
+        
         //int i = 0;
         //Listen for incoming UDP datagrams.
         while (true) {
             //System.out.println("number of times inside while loop: "+ ++i);
-
+            
             System.out.println();
-
+            
             //A new UDP socket is created for every client that attempts to connect to the server.
             dr = new DatagramSocket(8756);
-
+            
             server.startUDP(); 	//Start UDP connection.
-
+            
             //TCP connection starts at the end of startUDP(), in which a call is made to startTCP().
         }
-
+        
     }
-
+    
     public void startUDP() throws SocketException, IOException {
-
+        
         receiveU(dr);
         int f = makeRand();
         String hash;
@@ -105,165 +115,175 @@ public class Server {
                 hash = Hash.IDCheck(hash);
                 sHash[0] = hash;
                 break;
-
+                
             case "UserB":
                 hash = Integer.toString(f) + keyTable[1][1];
                 randArr[1] = hash;
                 hash = Hash.IDCheck(hash);
                 sHash[1] = hash;
                 break;
-
+                
             case "UserC":
                 hash = Integer.toString(f) + keyTable[2][1];
                 randArr[2] = hash;
                 hash = Hash.IDCheck(hash);
                 sHash[2] = hash;
                 break;
-
+                
             case "UserD":
                 hash = Integer.toString(f) + keyTable[3][1];
                 randArr[3] = hash;
                 hash = Hash.IDCheck(hash);
                 sHash[3] = hash;
                 break;
-
+                
             case "UserE":
                 hash = Integer.toString(f) + keyTable[4][1];
                 randArr[4] = hash;
                 hash = Hash.IDCheck(hash);
                 sHash[4] = hash;
                 break;
-
+                
             case "UserF":
                 hash = Integer.toString(f) + keyTable[5][1];
                 randArr[5] = hash;
                 hash = Hash.IDCheck(hash);
                 sHash[5] = hash;
                 break;
-
+                
             case "UserG":
                 hash = Integer.toString(f) + keyTable[6][1];
                 randArr[6] = hash;
                 hash = Hash.IDCheck(hash);
                 sHash[6] = hash;
                 break;
-
+                
             case "UserH":
                 hash = Integer.toString(f) + keyTable[7][1];
                 randArr[7] = hash;
                 hash = Hash.IDCheck(hash);
                 sHash[7] = hash;
                 break;
-
+                
             case "UserI":
                 hash = Integer.toString(f) + keyTable[8][1];
                 randArr[8] = hash;
                 hash = Hash.IDCheck(hash);
                 sHash[8] = hash;
                 break;
-
+                
             case "UserJ":
                 hash = Integer.toString(f) + keyTable[9][1];
                 randArr[9] = hash;
                 hash = Hash.IDCheck(hash);
                 sHash[9] = hash;
                 break;
-
+                
         }
-
+        
         CHALLENGE(f, dr);
         receiveS(dr);
-
+        
         //Close the DatagramSocket so that other clients can connect afterwards.
         dr.close();
         System.out.println("The DatagramSocket has been closed.");
         //System.out.println();
-
-        //*****Only create a new ClientThread if the TCP connection request from the client was successful.***** 
+        
+        //*****Only create a new ClientThread if the TCP connection request from the client was successful.*****
         if (isAuthSucc) {
             //Set isAuthSucc back to false for the next client that attempts to create a TCP connection.
             isAuthSucc = false;
-
+            
             server.startTCP(); 	//Start TCP connection.
         } else {
             System.out.println("***Client TCP connection was unsuccessful.***");
         }
-
+        
     }// END of startUDP
-
+    
     public void startTCP() throws IOException {
-
+        
         //client socket accepts server welcoming socket
         Socket cSocket = connectSocket.accept();
-
+        
         //Waiting for a connection request message from client.
         BufferedReader inFromClient = new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
-
+        
         String userMsg = inFromClient.readLine();
-
+        
         //Expecting "CONNECT_REQUEST,clientID" ****************should be randCookie***************
         System.out.println("Received: " + userMsg);
-
+        
         String uMsg[] = userMsg.split(",");
         // Server sends CONNECTED
         if (uMsg[0].equalsIgnoreCase("CONNECT_REQUEST")) {
             //Sent to client to let it know that it's now connected.
             String tcpMsg = "CONNECTED";
-
+            
             PrintWriter printWriter = new PrintWriter(cSocket.getOutputStream());
             printWriter.println(tcpMsg);
             printWriter.flush();
-
+            
             String userID = uMsg[1];
-
+            
             //New client socket for a specific thread's serverSocket.
             Socket uSocket;
-
+            String encryptKey = null;
             switch (userID) {
                 case "UserA":
                     uSocket = new ServerSocket(ports[0]).accept();
+                    encryptKey = randArr[0];
                     break;
                 case "UserB":
                     uSocket = new ServerSocket(ports[1]).accept();
+                    encryptKey = randArr[1];
                     break;
                 case "UserC":
                     uSocket = new ServerSocket(ports[2]).accept();
+                    encryptKey = randArr[2];
                     break;
                 case "UserD":
                     uSocket = new ServerSocket(ports[3]).accept();
+                    encryptKey = randArr[3];
                     break;
                 case "UserE":
                     uSocket = new ServerSocket(ports[4]).accept();
+                    encryptKey = randArr[4];
                     break;
                 case "UserF":
                     uSocket = new ServerSocket(ports[5]).accept();
+                    encryptKey = randArr[5];
                     break;
                 case "UserG":
                     uSocket = new ServerSocket(ports[6]).accept();
+                    encryptKey = randArr[6];
                     break;
                 case "UserH":
                     uSocket = new ServerSocket(ports[7]).accept();
+                    encryptKey = randArr[7];
                     break;
                 case "UserI":
                     uSocket = new ServerSocket(ports[8]).accept();
+                    encryptKey = randArr[8];
                     break;
                 case "UserJ":
                     uSocket = new ServerSocket(ports[9]).accept();
+                    encryptKey = randArr[9];
                     break;
                 default:
                     uSocket = new ServerSocket(6000).accept();
                     break;
             }
-
-            ClientThread t = new ClientThread(uSocket, userID);
-
+            
+            ClientThread t = new ClientThread(uSocket, userID, encryptKey);
+            
             users.add(t);   // save it in the ArrayList
-
+            
             t.start(); //start new thread
-
+            
         }
     }//End of startTCP***********************************
-
+    
     //Start of startUDP() related methods.=========================================
     public static void receiveU(DatagramSocket Sock) throws IOException {
         byte[] hold = new byte[1024];
@@ -275,7 +295,7 @@ public class Server {
         user = trim;
         System.out.println("receiveU sent: " + trim);
     }
-
+    
     public static void receiveS(DatagramSocket Sock) throws IOException {
         byte[] hold = new byte[1024];
         DatagramPacket r = new DatagramPacket(hold, hold.length);
@@ -284,8 +304,19 @@ public class Server {
         port = r.getPort();
         String trim = str.trim();
         //
-        String delims = "[,]+";
-        String[] tokens = trim.split(",");
+        String delims = "[#]+";
+        String[] tokens = trim.split(delims);
+        
+        /*
+        *****TEST AUTHeNTICATION TIMEOUT*****
+        try
+        {
+            TimeUnit.MINUTES.sleep(1);
+        }
+        catch(Exception e){}
+        */
+        
+        
         switch (tokens[0]) {
             case "UserA":
                 //
@@ -298,7 +329,7 @@ public class Server {
                     AUTH_FAIL(Sock);
                 }
                 break;
-
+                
             case "UserB":
                 if (sHash[1].equals(tokens[1])) {
                     int f = makeRand();
@@ -307,7 +338,7 @@ public class Server {
                     AUTH_FAIL(Sock);
                 }
                 break;
-
+                
             case "UserC":
                 if (sHash[2].equals(tokens[1])) {
                     int f = makeRand();
@@ -316,7 +347,7 @@ public class Server {
                     AUTH_FAIL(Sock);
                 }
                 break;
-
+                
             case "UserD":
                 if (sHash[3].equals(tokens[1])) {
                     int f = makeRand();
@@ -325,22 +356,22 @@ public class Server {
                     AUTH_FAIL(Sock);
                 }
                 break;
-
+                
             case "UserE":
                 if (sHash[4].equals(tokens[1])) {
                     int f = makeRand();
                     AUTH_SUCCESS(f, ports[4], Sock, randArr[4]
-                
-                );
-        }else
+                                 
+                                 );
+                }else
                 {
                     AUTH_FAIL(Sock);
                 }
-        break;
-
-    
-
-    case "UserF":
+                break;
+                
+                
+                
+            case "UserF":
                 if(sHash[5].equals(tokens[1])){
                     int f = makeRand();
                     AUTH_SUCCESS(f,ports[5],Sock,randArr[5]);
@@ -390,14 +421,14 @@ public class Server {
                 break;
                 
         }
-         System.out.println ("receiveS sent: " + trim);      
+        System.out.println ("receiveS sent: " + trim);
     }
-        
+    
     
     
     public static int makeRand(){
         Random rnd = new Random();
-        int n = 1000 + rnd.nextInt(9000);
+        int n = 10000000 + rnd.nextInt(90000000);
         return n;
     }
     
@@ -410,9 +441,9 @@ public class Server {
     
     public static void AUTH_SUCCESS(int rand_cookie, int port_number, DatagramSocket Sock,String cryKey) throws UnknownHostException, IOException
     {
-    	//Set isAuthSucc to true so that startTCP() will be called.
-    	isAuthSucc = true;
-	String sec= rand_cookie + "," + port_number;
+        //Set isAuthSucc to true so that startTCP() will be called.
+        isAuthSucc = true;
+        String sec= rand_cookie + "," + port_number;
         byte[] sb = (crypt.encrypt(sec,cryKey)).getBytes();
         InetAddress net = InetAddress.getLocalHost();
         DatagramPacket ss = new DatagramPacket(sb, sb.length, net, port);
@@ -420,22 +451,243 @@ public class Server {
     }
     
     public static void AUTH_FAIL(DatagramSocket Sock) throws IOException {
-    	
-    	//isAuthSucc should be set to false so that a TCP thread will not be made.
-    	
+        
+        //isAuthSucc should be set to false so that a TCP thread will not be made.
+        
         byte[] dr = ("authentication failed".getBytes());
         InetAddress net = InetAddress.getLocalHost();
         DatagramPacket ss = new DatagramPacket(dr, dr.length, net, port);
         Sock.send(ss);
     }
     //End of startUDP() related methods.=========================================
- 
+    
     
     
     //****************************************************************************
     //
-    //  TCP
+    //  TCP: New thread created for connected users with new socket
+    /****************************************************
+     *
+     * ClientThread
+     *
+     */
+    class ClientThread extends Thread
+    {
+        // the socket where to listen/talk
+        
+        Socket socket;
+        
+        ObjectInputStream sInput;
+        ObjectOutputStream sOutput;
+        
+        boolean inChatSession;
+        int id;
+        String userID;
+        String date;
+        String encryptionKey;
+        
+        String chatPartner;
+        int currentChatSession;
+        
+        ChatMessage cm;
+        
+        /**
+         *
+         * constructor
+         *
+         */
+        public ClientThread(Socket socket, String userID, String encryptionKey) {
+            this.userID = userID;
+            this.socket = socket;
+            id = ++uniqueId;
+            inChatSession = false;
+            this.encryptionKey = encryptionKey;
+            
+            // Thread trying to create Object Input/Output Streams
+            try {
+                sOutput = new ObjectOutputStream(socket.getOutputStream());
+                sInput = new ObjectInputStream(socket.getInputStream());
+                
+                display(userID + " just connected.");
+            } catch (IOException e) {
+                //System.out.println("************************************************");
+                display("Exception creating new Input/output Streams: " + e);
+                //System.out.println("************************************************");
+                return;
+            }
+            
+            date = new Date().toString() + "\n";
+        }
+        
+        
+        
+        // what will run forever
+        public void run()
+        {
+            
+            // to loop until LOGOUT
+            boolean keepGoing = true;
+            
+            while(keepGoing)
+            {
+                // try read incoming ChatMessage object from users
+                try
+                {
+                    cm = (ChatMessage) sInput.readObject();
+                }
+                catch (IOException e) {
+                    display(userID + " is disconnected");
+                    if (inChatSession)
+                    {
+                        ClientThread endUser = users.get(getUserIndexUsingID(chatPartner));
+                        
+                        // send chat end notification w/ info of chatting partner
+                        endUser.sendMsg(7, "Chat with "+ userID + " ended.");
+                        sendMsg(7, "Chat with "+ chatPartner + " ended.");
+                        
+                        endUser.inChatSession = false;
+                        inChatSession = false;
+                        endUser.chatPartner = null;
+                        chatPartner = null;
+                    }
+                    keepGoing=false;
+                    break;
+                }
+                catch(ClassNotFoundException e2) {break;}
+                
+                // getting the messaage part of the ChatMessage
+                String encryptedMsg = cm.getMessage();
+                int sessionNum = cm.getSessionID();
+                int type = cm.getType();
+                String user2 = cm.getUserB();
+                // decrypts message
+                String message = crypt.decrypt(encryptedMsg, encryptionKey);
+                
+                
+                // Switch on the type of message receive
+                switch(type)
+                {
+                    case 0: // chat req
+                        CHAT_REQUEST(userID, message);
+                        break;
+                    case 1: // received chat message from a user & send it to  intended recipient user
+                        System.out.println("CHAT_MESSAGE received from "+ userID + " to " + user2);
+                        
+                        ClientThread sendtoClient = users.get(getUserIndexUsingID(user2));
+                        String formatedMsg = sdf.format(new Date()) + " " + userID+ ": " + message;
+                        sendtoClient.sendChatMsg(sessionNum, userID, formatedMsg);
+                        RecordChat(currentChatSession, userID, user2, formatedMsg);
+                        break;
+                    case 2: // log out
+                        display(userID + " disconnected.");
+                        keepGoing = false;
+                        break;
+                    case 3: // end req received
+                        //END NOTIFY
+                        System.out.println("END_REQUEST from " + userID + " to " + message);
+                        ClientThread endUser = users.get(getUserIndexUsingID(message));
+                        
+                        // send chat end notification w/ info of chatting partner
+                        endUser.sendMsg(7, "Chat with "+ userID + " ended.");
+                        sendMsg(7, "Chat with "+ message + " ended.");
+                        
+                        endUser.inChatSession = false;
+                        inChatSession = false;
+                        endUser.chatPartner = null;
+                        chatPartner = null;
+                        break;
+                    case 4: // see online users
+                        String names = "";
+                        
+                        for(int i = 0; i < users.size(); ++i)
+                        {
+                            ClientThread ct = users.get(i);
+                            names += "\t" + ct.userID + "\n";
+                        }
+                        String msg ="List of the users connected at " + sdf.format(new Date()) + "\n" + names;
+                        sendMsg(4, msg);
+                        break;
+                    case 5: // Connected to server message
+                        sendMsg(5, "You are now connected to the Server.");
+                        break;
+                    case 6: // history request
+                        String his = HISTORY(userID, message);
+                        sendMsg(8, his);
+                        break;
+                    default:
+                        break;
+                }
+                
+                // User Disconnected
+                if(!socket.isConnected())
+                {
+                    display(userID + " is disconnected");
+                    keepGoing = false;
+                }
+            }// end of while loop
+            
+            // remove user from the arrayList containing the list of the connected Clients
+            close();
+            
+            remove(id);
+            
+        }
+        
+        // try to close everything
+        private void close() {
+            // try to close the connection
+            try {
+                if (sOutput != null) {
+                    sOutput.close();
+                }
+            } catch (Exception e) {
+            }
+            try {
+                if (sInput != null) {
+                    sInput.close();
+                }
+            } catch (Exception e) {
+            };
+            try {
+                if (socket != null) {
+                    socket.close();
+                }
+            } catch (Exception e) {
+            }
+        }
+        
+        public void sendMsg(int type, String msg)
+        {
+            
+            
+            String encryptedMsg = crypt.encrypt(msg, encryptionKey);
+            
+            ChatMessage newMsg = new ChatMessage(type, encryptedMsg);
+            try {
+                sOutput.writeObject(newMsg);
+            } catch (IOException e) {
+                display("Exception writing to server: " + e);
+            }
+        }
+        // send received message from userB to User
+        public void sendChatMsg(int session, String userB, String msg)
+        {
+            String encryptedMsg = crypt.encrypt(msg, encryptionKey);
+            
+            ChatMessage newMsg = new ChatMessage(1, encryptedMsg);
+            newMsg.setSessionID(session);
+            newMsg.setUserB(userB);
+            try {
+                sOutput.writeObject(newMsg);
+            } catch (IOException e) {
+                display("Exception writing to server: " + e);
+            }
+        }
+        
+    }//End of ClientThread
     
+    
+    // displays string with time stamp
     private void display(String msg)
     {
         String time = sdf.format(new Date()) + " " + msg;
@@ -457,44 +709,57 @@ public class Server {
         }
     }
     
-    //
-    //
+    
     public void CHAT_REQUEST(String userA, String userB)
     {
+        System.out.println("CHAT_REQUEST from " + userA + " to " + userB);
+        boolean startedChat = false;
+        
         for(int i = 0; i < users.size(); ++i)
         {
             ClientThread ct = users.get(i);
-            if(ct.userID == userB && ct.inChatSession == false)
+            if(userB.equalsIgnoreCase(ct.userID) && ct.inChatSession == false)
             {
                 int session = ++sessionID;
-                // CHAT_STARTED message sent
+                
                 ct.sendMsg(0, "CHAT_STARTED");
+                ct.chatPartner = userA;
                 ct.inChatSession = true;
+                ct.currentChatSession = session;
+                ct.sendChatMsg(session, userA, "Now Chatting with "+ userA);
+                
+                
                 
                 ClientThread ct2 = users.get(getUserIndexUsingID(userA));
                 ct2.sendMsg(0, "CHAT_STARTED");
+                ct.chatPartner = userB;
                 ct2.inChatSession = true;
+                ct2.currentChatSession = session;
+                ct2.sendChatMsg(session, userB, "Now Chatting with "+ userB);
+                // store chat session info
+                //ChatHistory record = new ChatHistory(session, userA, userB);
+                //chatLogs.add(record);
+                // send chat start notification w/ info of chatting partner
                 
-                ct.sendChatMsg(session, userA, "Now Chatting with "+ ct2.userID);
-                
-                ct2.sendChatMsg(session, userA, "Now Chatting with "+ ct.userID);
-                
-                return;
-            }
-            else
-            {
-                // UNREACHABLE message sent
-                ct.sendMsg(0, "UNREACHABLE");
+                startedChat = true;
             }
         }
+        // UNREACHABLE message sent if userB was not reached
+        if(!startedChat)
+        {
+            ClientThread ct2 = users.get(getUserIndexUsingID(userA));
+            ct2.sendMsg(0, "UNREACHABLE");
+        }
+
     }
+    
     
     public int getUserIndexUsingID(String userID)
     {
-        for(int i = 0; i < users.size(); ++i)
+        for(int i = 0; i < users.size(); i++)
         {
             ClientThread ct = users.get(i);
-            if(ct.userID == userID)
+            if(userID.equalsIgnoreCase(ct.userID))
             {
                 return i;
             }
@@ -503,195 +768,76 @@ public class Server {
         return 9999;
     }
     
-    public void END_REQUEST(String userA, String userB)
+    
+    public String HISTORY(String requestingUser, String partner)
     {
-        //END NOTIFY
-        
-    }
-    
-    public void CHAT(int session, String userB, String msg)
-    {
-        ClientThread ct = users.get(getUserIndexUsingID(userB));
-        ct.sendChatMsg(session, userB, msg);
-        
-    
-
-}
-    
-    
-    /****************************************************
-     * 
-     * ClientThread
-     *
-     */
-    class ClientThread extends Thread {
-    // the socket where to listen/talk
-
-    Socket socket;
-
-    ObjectInputStream sInput;
-    ObjectOutputStream sOutput;
-
-    boolean inChatSession;
-    int id;
-    String userID;
-    String date;
-
-    ChatMessage cm;
-
-    /**
-     *
-     * constructor
-     *
-     */
-    public ClientThread(Socket socket, String userID) {
-        this.userID = userID;
-        this.socket = socket;
-        id = ++uniqueId;
-        inChatSession = false;
-
-        // Thread trying to create Object Input/Output Streams
-        try {
-            sOutput = new ObjectOutputStream(socket.getOutputStream());
-            sInput = new ObjectInputStream(socket.getInputStream());
-
-            display(userID + " just connected.");
-        } catch (IOException e) {
-            //System.out.println("************************************************");
-            display("Exception creating new Input/output Streams: " + e);
-            //System.out.println("************************************************");
-            return;
-        }
-
-        date = new Date().toString() + "\n";
-    }
-
-    // what will run forever
-    public void run() {
-
-        // to loop until LOGOUT
-        boolean keepGoing = true;
-
-        while (keepGoing) {
-            // read a String (which is an object)
-            try {
-                cm = (ChatMessage) sInput.readObject();
-            } catch (IOException e) {
-                //System.out.println("************************************************");
-                display(userID + " Exception reading Streams: " + e);
-                //System.out.println("************************************************");                   
-                break;
-            } catch (ClassNotFoundException e2) {
-                break;
-            }
-
-            // the messaage part of the ChatMessage
-            String message = cm.getMessage();
-
-            // Switch on the type of message receive
-            switch (cm.getType()) {
-
-                case 0: // chat req
-                    CHAT_REQUEST(userID, message);
-                    break;
-                case 1: // message
-
-                    break;
-                case 2: // log out
-                    display(userID + " disconnected with a LOGOUT message.");
-                    keepGoing = false;
-                    break;
-                case 3: // end req
-
-                    break;
-                case 4: // see online users
-                    String names = "";
-
-                    for (int i = 0; i < users.size(); ++i) {
-                        ClientThread ct = users.get(i);
-                        names += "\t" + ct.userID + "\n";
+        System.out.println("HISTORY_REQUEST from " + requestingUser + " with " + partner);
+        String newline = System.getProperty("line.separator");
+        boolean logFound = false;
+        int sID;
+        String CL = "";
+        for(int i=chatLogs.size(); i>0; i--)
+        {
+            ChatHistory ch = chatLogs.get(i-1);
+            if ((requestingUser.equalsIgnoreCase(ch.getUser1()) && partner.equalsIgnoreCase(ch.getUser2())) || (partner.equalsIgnoreCase(ch.getUser1()) && requestingUser.equalsIgnoreCase(ch.getUser2())))
+            {
+                sID = ch.getSessionID();
+                try
+                {
+                    String fileName = Integer.toString(sID) + ".txt";
+                    //File file = new File(fileName);
+                    FileReader read = new FileReader(fileName);
+                    BufferedReader br = new BufferedReader(read);
+                    String line;
+                    while ((line = br.readLine()) != null)
+                    {
+                        CL += line + "\r\n";
                     }
-
-                    String msg = "List of the users connected at " + sdf.format(new Date()) + "\n" + names;
-                    sendMsg(4, msg);
-                    break;
-                case 5:
-                    sendMsg(5, "You are now connected to the Server.");
-                    break;
+                }
+                catch (IOException e){return ("Chat Log file could not be read");}
+                logFound = true;
+                break;
             }
         }
-        // remove myself from the arrayList containing the list of the
-        // connected Clients
-        remove(id);
-        close();
+        
+        if (!logFound)
+            return ("No History");
+        
+        return CL;
     }
-
-    // try to close everything
-    private void close() {
-        // try to close the connection
-        try {
-            if (sOutput != null) {
-                sOutput.close();
+    
+    public void RecordChat(int s, String u1, String u2, String msg)
+    {
+        System.out.println("RECORDING chat message from " + u1 + " with " + u2);
+        String fileName = Integer.toString(s) + ".txt";
+        File f = new File(fileName);
+        if(f.exists() && !f.isDirectory())
+        {
+            try
+            {
+                FileWriter fw = new FileWriter(fileName, true);
+                fw.write(s + "- " + msg);
+                fw.write("\r\n");
+                fw.close();
             }
-        } catch (Exception e) {
-        }
-        try {
-            if (sInput != null) {
-                sInput.close();
+            catch (IOException e) {System.out.println("Chat not recorded");
             }
-        } catch (Exception e) {
-        };
-        try {
-            if (socket != null) {
-                socket.close();
+        }
+        else if (!f.exists())
+        {
+            chatLogs.add(new ChatHistory(s, u1, u2));
+            //File file = new File(s + ".txt");
+            try
+            {
+                FileWriter fw = new FileWriter(fileName, true);
+                fw.write(s + "- " + msg);
+                fw.write("\r\n");
+                fw.close();
             }
-        } catch (Exception e) {
+            catch (IOException e) {System.out.println("Chat not recorded");
+            }
         }
     }
-
-    /*
-         * Write a String to the Client output stream
-     */
-    private boolean writeMsg(String msg) {
-        // if Client is still connected send the message to it
-        if (!socket.isConnected()) {
-            close();
-            return false;
-        }
-        // write the message to the stream
-        try {
-            sOutput.writeObject(msg);
-        } // if an error occurs, do not abort just inform the user
-        catch (IOException e) {
-            display("Error sending message to " + userID);
-            display(e.toString());
-        }
-        return true;
-    }
-
-    public void sendMsg(int type, String msg) {
-
-        ChatMessage newMsg = new ChatMessage(type, msg);
-        try {
-            sOutput.writeObject(newMsg);
-        } catch (IOException e) {
-            display("Exception writing to server: " + e);
-        }
-    }
-
-    public void sendChatMsg(int session, String userB, String msg) {
-
-        ChatMessage newMsg = new ChatMessage(1, msg);
-        newMsg.setSessionID(session);
-        newMsg.setUserB(userB);
-        try {
-            sOutput.writeObject(newMsg);
-        } catch (IOException e) {
-            display("Exception writing to server: " + e);
-        }
-    }
-
-}//End of ClientThread
-
+    
 } // END of Server
 
