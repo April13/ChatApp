@@ -88,8 +88,8 @@ class ClientUDPConnection {
             //Wait for Challenge from server containing randNumber. Server
             //message should be an 4-digit integer number, eg. 1234.
             
-            // Timeout to 1 minute
-            clientUDPSocket.setSoTimeout(6000);
+            // Timeout to 3 minute
+            clientUDPSocket.setSoTimeout(180000);
             
             //Create packet to extract message from the receive buffer.
             DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
@@ -148,8 +148,8 @@ class ClientUDPConnection {
             //Retrieve destination server IP address.
             serverIPAddress = InetAddress.getByName("localhost");
             
-            // Timeout to 1 min
-            clientUDPSocket.setSoTimeout(6000);
+            // Timeout to 3 min
+            clientUDPSocket.setSoTimeout(180000);
             
             //Send UDP packet to provide the client's response to the server's authentication challenge.
             DatagramPacket sendPacket = new DatagramPacket(sendBuffer, sendBuffer.length, serverIPAddress, UDPServerPort);

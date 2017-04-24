@@ -155,17 +155,17 @@ class ClientTCPConnection {
         Scanner scan = new Scanner(System.in);
         
         // sets activity timeout to 10 min
-        int time = 30000;
+        int time = 600000;
         
         String uInput = "";
         
-        while(!isTimeout || !logOut)
+        while(!logOut)
         {
             try
             {
                 clientTCPSocket.setSoTimeout(time);
-                sendMessage(5,"");
-                while(!isTimeout || !logOut)
+                sendMessage(5,"");  // sends connected message to server (for server to add to list of online clients)
+                while(!logOut)
                 {
                     System.out.print("> ");
                     // read message from user
@@ -174,7 +174,7 @@ class ClientTCPConnection {
                     //If end user enters "Log off" correctly, client closes TCP connection.
                     if(uInput.equalsIgnoreCase(logoff))
                     {
-                        
+                        // sends end chat to server if in chat
                         if(inChat)
                         {
                             sendMessage(3, recipientUser);
@@ -193,17 +193,17 @@ class ClientTCPConnection {
                         String temp[] = uInput.split(" ");
                         String userB = temp[1];
                         
-                        // Chat Request
+                        // Chat Request message sent to server
                         sendMessage(0, userB);
                         
                     }
                     else if(uInput.equalsIgnoreCase("show online"))
                     {
-                        sendMessage(4,"");
+                        sendMessage(4,"");  // show online request sent to server
                     }
                     else if(uInput.equalsIgnoreCase("end chat"))
                     {
-                        if(inChat)
+                        if(inChat)  // sends end chat to server
                             sendMessage(3, recipientUser);
                         else
                         {
@@ -214,7 +214,7 @@ class ClientTCPConnection {
                     {
                         String temp[] = uInput.split(" ");
                         String userB = temp[1];
-                        sendMessage(6, userB);
+                        sendMessage(6, userB);  // sends history request to server
                     }
                     else
                     {
@@ -245,15 +245,16 @@ class ClientTCPConnection {
                 //System.out.println ("What do you want from me: " + s );
 
             }
-
+            if (logOut)
+            {
+                sendMessage(2, ""); // sends log off/ disconnect message to server
+                System.out.println("OFFLINE");
+                disconnect();       // closes socket n reading/writing streams
+                break;
+            }
         }
         
-        if (logOut)
-        {
-            sendMessage(2, "");
-            System.out.println("OFFLINE");
-            disconnect();
-        }
+
         
         
     } // end of connected()
@@ -291,11 +292,15 @@ class ClientTCPConnection {
                 boolean noRepeat = false;
                 
                 try{
+                    // try to get messages from server
                     receivedChat = (ChatMessage) sInput.readObject();
                 }
                 catch(IOException e)
                 {
+                    // Exception happens when socket times out
+                    // if user isChatting, noRepeat is used so the ChatMessage object read before is not show again
                     noRepeat = true;
+                    // if not user is not chatting, it disconnects users
                     if(!isChatting)
                     {
                         keepListening = false;
@@ -320,7 +325,7 @@ class ClientTCPConnection {
                     
                     switch (type)
                     {
-                        case 0: // chat request
+                        case 0: // chat request message received from server
                             if (msg.equalsIgnoreCase("CHAT_STARTED"))
                             {
                                 System.out.println(msg);
@@ -332,8 +337,8 @@ class ClientTCPConnection {
                                 System.out.print("> ");
                             }
                             break;
-                        case 1: // chat msg
-                            if (!inChat)
+                        case 1: // chat msg received from server from a client
+                            if (!inChat)    // sets chatting status if not yet set
                             {
                                 recipientUser = user2;
                                 chatSession = cSession;
@@ -343,13 +348,11 @@ class ClientTCPConnection {
                             System.out.println(msg);
                             System.out.print("> ");
                             break;
-                        case 2: // log off
-                            break;
-                        case 4: // show online users
+                        case 4: // prints show online users message from server
                             System.out.println(msg);
                             System.out.print("> ");
                             break;
-                        case 5: // connected
+                        case 5: // connected to server message receieved
                             // prints connected message and commands
                             System.out.println(msg);
                             System.out.println("\n*************************************************************");
@@ -362,14 +365,14 @@ class ClientTCPConnection {
                             System.out.println("*************************************************************");
                             System.out.print("> ");
                             break;
-                        case 7: // end chat notification
+                        case 7: // end chat notification from server
                             System.out.println(msg);
                             System.out.print("> ");
                             recipientUser = null;
                             inChat = false;
                             isChatting = false;
                             break;
-                        case 8: // chat history message
+                        case 8: // prints out chat history message from server
                             System.out.println(msg);
                             System.out.print("> ");
                             break;
@@ -380,11 +383,13 @@ class ClientTCPConnection {
                 }
             
                 
-                if(isTimeout)
+                if(isTimeout || logOut)
                 {
                     System.out.println("You were disconnected");
                     sendMessage(2, "");
                     logOut = true;
+                    keepListening = false;
+                    disconnect();
                 }
                 
             }
