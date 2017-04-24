@@ -5,20 +5,15 @@ import java.io.InputStreamReader;
 
 /**
  * The Client class is used to initiate the creation of a Client and
- * prompts the end user for a clientID in order to log on,
+ * prompts the end user for a clientId in order to log on,
  * create a UDP connection to contact the server, and
  * create the more reliable TCP connection once access
  * has been granted by the server. 
- * 
- * The end user must know their password (the Client's secret key)
- * as well in order to be able to authenticate themselves later
- * when the server sends a challenge to the Client.
- *
  */
 class Client {
     
-    private ClientUDPConnection clientUDP; 	//UDP
-    private ClientTCPConnection clientTCP; 	//TCP
+    private ClientUDPConnection clientUDP; 	
+    private ClientTCPConnection clientTCP; 	
     int UDPServerPort = 8756;
     
     private String clientID; 			//The clientID is used to determine the identity of the users.
@@ -46,9 +41,9 @@ class Client {
     }
     
     
-    /**
-     * The end user is required to have a valid clientID to begin.
-     */
+	/**
+	 * The end user is required to have a valid clientID to begin.
+	 */
     public static void main(String args[]) throws Exception {
         
         
@@ -103,8 +98,9 @@ class Client {
             
             //Client sends response() to authenticate itself.
             //Wait on server to return authSucc or authFail; timeout possible.
-            if(!clientUDP.timedout)
+            if(!clientUDP.timedout) {
                 clientUDP.response();
+            }
                         
             
             //****Server sends an AUTH_FAIL or AUTH_SUCC.****

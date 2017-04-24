@@ -1,5 +1,11 @@
 import java.io.*;
 
+/**
+ * The ChatHistory class is used by the server to store 
+ * information related to chats between each pair of 
+ * clients. It saves the clientIDs of the two clients and 
+ * the sessionId which identifies each chat session.
+ */
 class ChatHistory
 {
 	private String user1, user2;

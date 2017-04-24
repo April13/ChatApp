@@ -8,12 +8,12 @@ import java.io.ObjectOutputStream;
 import java.util.Scanner;
 
 
-/*
- * Still missing:
- *
- * Encryption/Decryption methods.
- *
- *
+/**
+ * After a UDP connection has been established, it will be 
+ * closed, and a TCP connection will be created between the 
+ * client and the server after a series of authentication 
+ * mechanisms are performed to ensure the identity of the client 
+ * logging into the server.
  */
 
 class ClientTCPConnection {
@@ -55,7 +55,6 @@ class ClientTCPConnection {
      * forward communication is encrypted and exchanged over the
      * TCP connection until it is closed.
      * @throws IOException
-     *
      */
     protected void connect() throws IOException
     {
@@ -73,10 +72,12 @@ class ClientTCPConnection {
         clientTCPSocket = new Socket(serverIPAddress, tcpPort);
         
         
-        //****Encrypt message.****
+        //*****************************************************************************************************
+        // dont we need to encrypt message here?
+        //
+        // Weren't we supposed to send the randCookie to the server?
+        //*****************************************************************************************************
         
-        
-        //*******Weren't we supposed to send the randCookie to the server?*******
         
         //Send "CONNECT_REQUEST,clientID" to server.
         printWriter = new PrintWriter(clientTCPSocket.getOutputStream());
@@ -113,8 +114,14 @@ class ClientTCPConnection {
     private String chatMsg, recipientUser;
     private int chatSession;
     
-    //
-    //
+
+    /**
+     * Once the TCP connection has been established, the client 
+     * will be able to send chats to other clients that are also 
+     * online and not currently engaged in other chat sessions. 
+     * The client can also check to see the chat history between it 
+     * and other users that it has already chatted with.
+     */
     protected void connected()
     {
         String userInput="";
@@ -146,8 +153,10 @@ class ClientTCPConnection {
         logOut = false;
         
         Scanner scan = new Scanner(System.in);
+        
         // sets activity timeout to 10 min
         int time = 30000;
+        
         String uInput = "";
         
         while(!isTimeout || !logOut)
@@ -233,7 +242,7 @@ class ClientTCPConnection {
                     isTimeout = true;
                     break;
                 }
-                System.out.println ("What do you want from me: " + s );
+                //System.out.println ("What do you want from me: " + s );
 
             }
 
@@ -249,7 +258,13 @@ class ClientTCPConnection {
         
     } // end of connected()
     
-   
+    
+    /**
+     * ChatListener only listens for incoming messages from the server 
+     * and doesn't manage the timer. It checks the isTimeout flag set 
+     * by connected() to see whether or not it needs to halt execution. 
+     * Otherwise, it listens for packets on loop.
+     */
     class ChatListener extends Thread
     {
         ChatMessage receivedChat;
@@ -301,7 +316,7 @@ class ClientTCPConnection {
                     int cSession = receivedChat.getSessionID();
                     String user2 = receivedChat.getUserB();
                     
-                    String msg = crypt.decrypt(encryptedMsg, encryptionKey);
+                    String msg = Crypt.decrypt(encryptedMsg, encryptionKey);
                     
                     switch (type)
                     {
@@ -337,14 +352,14 @@ class ClientTCPConnection {
                         case 5: // connected
                             // prints connected message and commands
                             System.out.println(msg);
-                            System.out.println("\n********************************************************");
+                            System.out.println("\n*************************************************************");
                             System.out.println("COMMANDS:");
-                            System.out.println("\tchat <USERID>: initiate chat with another user");
-                            System.out.println("\thistory <USERID>: initiate chat with another user");
-                            System.out.println("\tlog off: log user off and ends program");
-                            System.out.println("\tshow online: shows all online users");
-                            System.out.println("\tend chat: ends current chat session");
-                            System.out.println("********************************************************");
+                            System.out.println("\t" + "chat <USERID>" 	+ "\t   " 	+ "initiate chat with another user");
+                            System.out.println("\t" + "history <USERID>"+ "   "		+ "initiate chat with another user");
+                            System.out.println("\t" + "log off" 		+ "\t\t   "	+ "log user off and ends program");
+                            System.out.println("\t" + "show online" 	+ "\t   " 	+ "shows all online users");
+                            System.out.println("\t" + "end chat" 		+ "\t   " 	+ "ends current chat session");
+                            System.out.println("*************************************************************");
                             System.out.print("> ");
                             break;
                         case 7: // end chat notification
@@ -379,7 +394,7 @@ class ClientTCPConnection {
 
     void sendMessage(int type, String msg)
     {
-        String encryptedMsg = crypt.encrypt(msg, encryptionKey);
+        String encryptedMsg = Crypt.encrypt(msg, encryptionKey);
         
         ChatMessage newM = new ChatMessage(type, encryptedMsg);
         
@@ -393,7 +408,7 @@ class ClientTCPConnection {
     
     void sendChatMessage(String toUser, String msg, int session)
     {
-        String encryptedMsg = crypt.encrypt(msg, encryptionKey);
+        String encryptedMsg = Crypt.encrypt(msg, encryptionKey);
         
         ChatMessage newM = new ChatMessage(1, encryptedMsg);
         newM.setSessionID(session);
@@ -407,8 +422,8 @@ class ClientTCPConnection {
         }
     }
     
-    /*
-     * Closes the input and output streams and disconnect
+    /**
+     * Closes the input and output streams and disconnects
      */
     private void disconnect()
     {

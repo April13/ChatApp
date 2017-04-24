@@ -1,10 +1,8 @@
 
 /**
- *
- * Protected class.
- *
+ * Stores the client IDs and their associated secret keys for 10 end users.
+ * Used to validate that a pre-existing Client is logging on.
  */
-
 class KeyTable {
     
     

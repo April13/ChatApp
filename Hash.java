@@ -32,7 +32,10 @@ class Hash {
     }
     
     /**
-     * Credit to: user Pointer Null
+     * Translates the byte array into hexadecimal format before 
+     * it is returned as a String in IDCheck.
+     * 
+     * Credit to: stackoverflow.com user Pointer Null
      * https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
      */
     

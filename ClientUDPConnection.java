@@ -9,11 +9,12 @@ import java.util.StringTokenizer;
 
 
 /**
- * Resources referenced:
- * http://www.cs.usfca.edu/~parrt/course/601/lectures/sockets.html
- * http://cs.lmu.edu/~ray/notes/javanetexamples/
- * https://systembash.com/a-simple-java-udp-server-and-udp-client/
- * https://systembash.com/a-simple-java-tcp-server-and-tcp-client/
+ * The initial contact to the server is made over a UDP 
+ * connection. Once the client's identity has been verified 
+ * by the server using the client's secret key which is 
+ * stored on both the server and the client, it will be able 
+ * to close the UDP connection and create an encrypted TCP 
+ * connection.
  */
 class ClientUDPConnection {
     
@@ -53,9 +54,7 @@ class ClientUDPConnection {
         this.UDPServerPort = 8756;
         timedout = false;
     }
-    
-    
-    
+     
     
     /**
      * Initiates the process for the client to be authenticated by
@@ -120,10 +119,7 @@ class ClientUDPConnection {
             timedout = true;
         }
     }
-    
-    
-    
-    
+     
     
     /**
      * Calculates the client's response value and sends it as the
@@ -131,7 +127,6 @@ class ClientUDPConnection {
      * authenticate itself. Waits for authSuccess(randCookie,
      * TCPPortNumber) or authFail() response. If authSuccess, the
      * server's encryptionKey should be the same and the client's.
-     *
      */
     protected void response() throws IOException
     {
@@ -183,7 +178,7 @@ class ClientUDPConnection {
             if(!serverMsg.equalsIgnoreCase(authfail))
             {
                 encryptionKey= randNumber+clientKey;
-                serverMsg = crypt.decrypt(serverMsg,encryptionKey);
+                serverMsg = Crypt.decrypt(serverMsg,encryptionKey);
                 
                 
                 //If the server's response isn't an AUTH_FAIL message,

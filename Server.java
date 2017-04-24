@@ -23,14 +23,11 @@ import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 /**
- *
- * @author Aditya
+ * The server must be online and listening for the client's contact 
+ * first over UDP, and then must be able to relay messages between 
+ * 5 pairs of clients on TCP after the TCP connection has been 
+ * established for each client.
  */
 public class Server {
     
@@ -56,7 +53,7 @@ public class Server {
     private static DatagramSocket dr;
     
     static Server server;
-    // chat hisotry stores session id and users that chatted int session
+    // chat history stores session id and users that chatted int session
     private Vector<ChatHistory> chatLogs;
     
     //If this is false, then that means the client's TCP connection attempt has failed in startUDP(),
@@ -104,7 +101,7 @@ public class Server {
     
     public void startUDP() throws SocketException, IOException {
         
-        receiveU(dr);
+        receiveClientHello(dr);
         int f = makeRand();
         String hash;
         System.out.println("Num: " + f);
@@ -182,7 +179,7 @@ public class Server {
         }
         
         CHALLENGE(f, dr);
-        receiveS(dr);
+        receiveClientResp(dr);
         
         //Close the DatagramSocket so that other clients can connect afterwards.
         dr.close();
@@ -201,6 +198,11 @@ public class Server {
         
     }// END of startUDP
     
+    
+    /** 
+     * Creates a new dedicated listener for each successfully 
+     * connected client. 
+     */
     public void startTCP() throws IOException {
         
         //client socket accepts server welcoming socket
@@ -211,7 +213,7 @@ public class Server {
         
         String userMsg = inFromClient.readLine();
         
-        //Expecting "CONNECT_REQUEST,clientID" ****************should be randCookie***************
+        //Expecting "CONNECT_REQUEST,clientID" ****************should be randCookie***************!!!!!
         System.out.println("Received: " + userMsg);
         
         String uMsg[] = userMsg.split(",");
@@ -285,7 +287,7 @@ public class Server {
     }//End of startTCP***********************************
     
     //Start of startUDP() related methods.=========================================
-    public static void receiveU(DatagramSocket Sock) throws IOException {
+    public static void receiveClientHello(DatagramSocket Sock) throws IOException {
         byte[] hold = new byte[1024];
         DatagramPacket r = new DatagramPacket(hold, hold.length);
         Sock.receive(r);
@@ -296,7 +298,7 @@ public class Server {
         System.out.println("receiveU sent: " + trim);
     }
     
-    public static void receiveS(DatagramSocket Sock) throws IOException {
+    public static void receiveClientResp(DatagramSocket Sock) throws IOException {
         byte[] hold = new byte[1024];
         DatagramPacket r = new DatagramPacket(hold, hold.length);
         Sock.receive(r);
@@ -444,7 +446,7 @@ public class Server {
         //Set isAuthSucc to true so that startTCP() will be called.
         isAuthSucc = true;
         String sec= rand_cookie + "," + port_number;
-        byte[] sb = (crypt.encrypt(sec,cryKey)).getBytes();
+        byte[] sb = (Crypt.encrypt(sec,cryKey)).getBytes();
         InetAddress net = InetAddress.getLocalHost();
         DatagramPacket ss = new DatagramPacket(sb, sb.length, net, port);
         Sock.send(ss);
@@ -463,14 +465,7 @@ public class Server {
     
     
     
-    //****************************************************************************
-    //
-    //  TCP: New thread created for connected users with new socket
-    /****************************************************
-     *
-     * ClientThread
-     *
-     */
+
     class ClientThread extends Thread
     {
         // the socket where to listen/talk
@@ -491,10 +486,9 @@ public class Server {
         
         ChatMessage cm;
         
+        
         /**
-         *
          * constructor
-         *
          */
         public ClientThread(Socket socket, String userID, String encryptionKey) {
             this.userID = userID;
@@ -510,9 +504,7 @@ public class Server {
                 
                 display(userID + " just connected.");
             } catch (IOException e) {
-                //System.out.println("************************************************");
                 display("Exception creating new Input/output Streams: " + e);
-                //System.out.println("************************************************");
                 return;
             }
             
@@ -561,7 +553,7 @@ public class Server {
                 int type = cm.getType();
                 String user2 = cm.getUserB();
                 // decrypts message
-                String message = crypt.decrypt(encryptedMsg, encryptionKey);
+                String message = Crypt.decrypt(encryptedMsg, encryptionKey);
                 
                 
                 // Switch on the type of message receive
@@ -660,7 +652,7 @@ public class Server {
         {
             
             
-            String encryptedMsg = crypt.encrypt(msg, encryptionKey);
+            String encryptedMsg = Crypt.encrypt(msg, encryptionKey);
             
             ChatMessage newMsg = new ChatMessage(type, encryptedMsg);
             try {
@@ -672,7 +664,7 @@ public class Server {
         // send received message from userB to User
         public void sendChatMsg(int session, String userB, String msg)
         {
-            String encryptedMsg = crypt.encrypt(msg, encryptionKey);
+            String encryptedMsg = Crypt.encrypt(msg, encryptionKey);
             
             ChatMessage newMsg = new ChatMessage(1, encryptedMsg);
             newMsg.setSessionID(session);
