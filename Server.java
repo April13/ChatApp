@@ -213,7 +213,7 @@ public class Server {
         
         String userMsg = inFromClient.readLine();
         
-        //Expecting "CONNECT_REQUEST,clientID" ****************should be randCookie***************!!!!!
+        //Expecting "CONNECT_REQUEST,clientID"
         System.out.println("Received: " + userMsg);
         
         String uMsg[] = userMsg.split(",");
