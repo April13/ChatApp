@@ -71,14 +71,7 @@ class ClientTCPConnection {
         //Create a new TCP client socket connection. Server is already waiting for a connection request.
         clientTCPSocket = new Socket(serverIPAddress, tcpPort);
         
-        
-        //*****************************************************************************************************
-        // dont we need to encrypt message here?
-        //
-        // Weren't we supposed to send the randCookie to the server?
-        //*****************************************************************************************************
-        
-        
+       
         //Send "CONNECT_REQUEST,clientID" to server.
         printWriter = new PrintWriter(clientTCPSocket.getOutputStream());
         printWriter.println("CONNECT_REQUEST," + clientID);
